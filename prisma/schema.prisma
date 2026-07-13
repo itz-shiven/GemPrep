@@ -1,0 +1,137 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  
+}
+
+model User {
+  id               String       @id @default(cuid())
+  clerkId          String       @unique
+  email            String       @unique
+  name             String?
+  avatarUrl        String?
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  resume           Resume?
+  participantIn    Participant[]
+  feedbackGiven    Feedback[]   @relation("FeedbackReviewer")
+  feedbackReceived Feedback[]   @relation("FeedbackReviewee")
+}
+
+model Resume {
+  id         String   @id @default(cuid())
+  userId     String   @unique
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fileUrl    String
+  fileName   String
+  uploadedAt DateTime @default(now())
+}
+
+enum RoomStatus {
+  WAITING
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum RoomType {
+  PUBLIC
+  PRIVATE
+}
+
+model InterviewRoom {
+  id            String        @id @default(cuid())
+  code          String        @unique @default(cuid())
+  type          RoomType      @default(PRIVATE)
+  status        RoomStatus    @default(WAITING)
+  interviewType String        @default("DSA")
+  createdAt     DateTime      @default(now())
+
+  participants  Participant[]
+  interview     Interview?
+}
+
+enum ParticipantRole {
+  INTERVIEWER
+  CANDIDATE
+}
+
+model Participant {
+  id         String          @id @default(cuid())
+  roomId     String
+  room       InterviewRoom   @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  userId     String
+  user       User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role       ParticipantRole
+  isReady    Boolean         @default(false)
+  joinedAt   DateTime        @default(now())
+
+  @@unique([roomId, userId])
+}
+
+enum InterviewPhase {
+  INTRO
+  CODING
+  DISCUSSION
+  ENDED
+}
+
+model InterviewQuestion {
+  id          String   @id @default(cuid())
+  title       String
+  difficulty  String
+  description String
+  starterCode String?
+  tags        String[]
+  createdAt   DateTime @default(now())
+
+  interviews  Interview[]
+}
+
+model Interview {
+  id                  String             @id @default(cuid())
+  roomId              String             @unique
+  room                InterviewRoom      @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  currentPhase        InterviewPhase     @default(INTRO)
+  phaseStartedAt      DateTime?
+  startedAt           DateTime           @default(now())
+  endedAt             DateTime?
+  
+  code                String?
+  language            String             @default("javascript")
+  
+  questionId          String?
+  question            InterviewQuestion? @relation(fields: [questionId], references: [id])
+
+  aiSuggestions       AISuggestion[]
+  feedback            Feedback[]
+}
+
+model AISuggestion {
+  id          String    @id @default(cuid())
+  interviewId String
+  interview   Interview @relation(fields: [interviewId], references: [id], onDelete: Cascade)
+  content     String
+  createdAt   DateTime  @default(now())
+}
+
+model Feedback {
+  id          String    @id @default(cuid())
+  interviewId String
+  interview   Interview @relation(fields: [interviewId], references: [id], onDelete: Cascade)
+  
+  reviewerId  String
+  reviewer    User      @relation("FeedbackReviewer", fields: [reviewerId], references: [id], onDelete: Cascade)
+  
+  revieweeId  String
+  reviewee    User      @relation("FeedbackReviewee", fields: [revieweeId], references: [id], onDelete: Cascade)
+  
+  role        ParticipantRole
+  ratings     Json
+  comments    String?
+  createdAt   DateTime  @default(now())
+}
