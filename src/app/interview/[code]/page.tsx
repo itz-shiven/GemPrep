@@ -34,7 +34,7 @@ export default async function InterviewPage({ params }: { params: Promise<{ code
     );
   }
 
-  const participant = room.participants.find(p => p.userId === dbUser.id);
+  const participant = room.participants.find((p: any) => p.userId === dbUser.id);
   if (!participant) {
     redirect(`/dashboard/interviews/new?code=${code}`);
   }

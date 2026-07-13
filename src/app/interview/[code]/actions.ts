@@ -23,7 +23,7 @@ export async function updateReadyStatus(roomId: string, participantId: string, i
       include: { participants: true }
     });
 
-    if (room && room.participants.length === 2 && room.participants.every(p => p.isReady)) {
+    if (room && room.participants.length === 2 && room.participants.every((p: any) => p.isReady)) {
       // Create Interview record and set room to IN_PROGRESS
       const interview = await db.interview.create({
         data: {

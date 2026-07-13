@@ -41,7 +41,7 @@ export default async function DashboardPage() {
   // Calculate stats
   const hasResume = !!dbUser.resume;
   const totalInterviews = dbUser.participantIn.length;
-  const completedInterviews = dbUser.participantIn.filter(p => p.room.status === "COMPLETED").length;
+  const completedInterviews = dbUser.participantIn.filter((p: any) => p.room.status === "COMPLETED").length;
   
   // Calculate average rating from feedback
   const avgRating = dbUser.feedbackReceived.length > 0

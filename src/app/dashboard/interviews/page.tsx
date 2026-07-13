@@ -70,7 +70,7 @@ export default async function InterviewsPage() {
             </Link>
           </div>
         ) : (
-          interviews.map((interview) => (
+          interviews.map((interview: any) => (
             <Card key={interview.id} className="flex flex-col">
               <CardHeader className="pb-3">
                 <div className="flex justify-between items-start">
