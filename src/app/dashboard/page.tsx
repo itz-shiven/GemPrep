@@ -45,7 +45,7 @@ export default async function DashboardPage() {
   
   // Calculate average rating from feedback
   const avgRating = dbUser.feedbackReceived.length > 0
-    ? (dbUser.feedbackReceived.reduce((acc, curr) => {
+    ? (dbUser.feedbackReceived.reduce((acc: number, curr: any) => {
         // Assume ratings is a JSON object with numeric scores
         const scores = curr.ratings as Record<string, number>;
         const avg = Object.values(scores).reduce((a, b) => a + b, 0) / (Object.values(scores).length || 1);
