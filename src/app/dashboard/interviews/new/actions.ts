@@ -47,7 +47,7 @@ export async function joinInterview(code: string) {
     if (!room) return { error: "Room not found" };
     if (room.status !== "WAITING") return { error: "Room is no longer accepting participants" };
     
-    const existingParticipant = room.participants.find(p => p.userId === dbUser.id);
+    const existingParticipant = room.participants.find((p: any) => p.userId === dbUser.id);
     if (existingParticipant) {
       return { success: true }; // Already joined
     }
