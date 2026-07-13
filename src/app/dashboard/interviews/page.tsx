@@ -33,7 +33,7 @@ export default async function InterviewsPage() {
     redirect("/dashboard");
   }
 
-  const interviews = dbUser.participantIn.map(p => ({
+  const interviews = dbUser.participantIn.map((p: any) => ({
     id: p.room.id,
     code: p.room.code,
     type: p.room.type,
