@@ -1,0 +1,38 @@
+generator client {
+  provider     = "prisma-client"
+  output       = "../src/generated/prisma"
+  runtime      = "nodejs"
+  moduleFormat = "esm"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum ExperienceLevel {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+}
+
+model User {
+  id                  String           @id @default(cuid())
+  clerkId             String           @unique
+  email               String           @unique
+  username            String?          @unique
+  fullName            String?
+  avatar              String?
+  bio                 String?          @db.VarChar(280)
+  college             String?
+  graduationYear      Int?
+  experienceLevel     ExperienceLevel?
+  preferredLanguage   String?
+  gems                Int              @default(0)
+  interviewsCompleted Int              @default(0)
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
+
+  @@index([email])
+  @@index([experienceLevel])
+  @@map("users")
+}
