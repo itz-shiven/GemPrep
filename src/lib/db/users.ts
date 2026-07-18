@@ -31,24 +31,61 @@ export async function getUserByClerkId(clerkId: string) {
 
 export async function upsertUserFromClerk(input: ClerkProfileInput) {
   const prisma = getPrisma();
+  const existingUserByClerkId = await prisma.user.findUnique({
+    where: {
+      clerkId: input.clerkId,
+    },
+  });
+
+  if (existingUserByClerkId) {
+    return prisma.user.update({
+      where: {
+        clerkId: input.clerkId,
+      },
+      data: {
+        email: input.email,
+        fullName: input.fullName,
+        avatar: input.avatar,
+      },
+    });
+  }
+
+  const existingUserByEmail = await prisma.user.findUnique({
+    where: {
+      email: input.email,
+    },
+  });
+
+  if (existingUserByEmail) {
+    return prisma.user.update({
+      where: {
+        id: existingUserByEmail.id,
+      },
+      data: {
+        clerkId: input.clerkId,
+        email: input.email,
+        fullName: input.fullName,
+        avatar: input.avatar,
+        username:
+          existingUserByEmail.username ??
+          (await resolveUniqueUsername(
+            input.username ?? input.email.split("@")[0] ?? "user",
+            input.clerkId,
+          )),
+      },
+    });
+  }
+
   const username = await resolveUniqueUsername(
     input.username ?? input.email.split("@")[0] ?? "user",
     input.clerkId,
   );
 
-  return prisma.user.upsert({
-    where: {
-      clerkId: input.clerkId,
-    },
-    create: {
+  return prisma.user.create({
+    data: {
       clerkId: input.clerkId,
       email: input.email,
       username,
-      fullName: input.fullName,
-      avatar: input.avatar,
-    },
-    update: {
-      email: input.email,
       fullName: input.fullName,
       avatar: input.avatar,
     },
