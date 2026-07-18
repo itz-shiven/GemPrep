@@ -6,7 +6,7 @@ export type RoomStatus = "LIVE" | "PAUSED";
 
 export type Difficulty = "Easy" | "Medium" | "Hard";
 
-export type LanguageId = "typescript" | "javascript" | "python";
+export type LanguageId = "cpp" | "java" | "python" | "javascript";
 
 export type LanguageOption = {
   id: LanguageId;
@@ -41,12 +41,6 @@ export type TestCase = {
   status: TestCaseStatus;
 };
 
-export type ConsoleLine = {
-  id: string;
-  level: "info" | "success" | "error";
-  text: string;
-};
-
 export type RoomParticipant = {
   id: string;
   name: string;
@@ -76,7 +70,6 @@ export type InterviewRoomMock = {
   status: RoomStatus;
   problem: InterviewProblem;
   testCases: TestCase[];
-  consoleLines: ConsoleLine[];
   chatMessages: ChatMessage[];
   checklist: InterviewChecklistItem[];
   languages: LanguageOption[];

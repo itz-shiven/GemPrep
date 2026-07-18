@@ -5,20 +5,20 @@ import { useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 
-import { CodeEditor } from "@/features/interview-room/components/CodeEditor";
+import { RunCodeButton } from "@/features/code-execution/components/RunCodeButton";
+import { useCodeExecution } from "@/features/code-execution/hooks/useCodeExecution";
+import { CollaborativeEditor } from "@/features/collaborative-editor/components/CollaborativeEditor";
+import type { CollaborativeEditorUser } from "@/features/collaborative-editor/types/editor";
+import type { NewCodeExecutionTestCase } from "@/features/code-execution/types/execution";
+import { LanguageSelector } from "@/features/collaborative-editor/components/LanguageSelector";
 import { ProblemPanel } from "@/features/interview-room/components/ProblemPanel";
 import { RoomHeader } from "@/features/interview-room/components/RoomHeader";
 import {
   MOCK_INTERVIEW_ROOM,
   getLanguageOption,
 } from "@/features/interview-room/data/mockInterviewRoom";
-import type {
-  ConsoleLine,
-  LanguageId,
-  TestCase,
-} from "@/features/interview-room/types/interview-room";
+import type { LanguageId, TestCase } from "@/features/interview-room/types/interview-room";
 import { LiveKitProvider } from "@/features/livekit/components/LiveKitProvider";
-import { MediaControls } from "@/features/livekit/components/MediaControls";
 import { VideoGrid } from "@/features/livekit/components/VideoGrid";
 import { getMockInterviewByRoomId } from "@/features/interview-workspace/data/mockInterviews";
 import { useStoredInterviewRole } from "@/features/interview-workspace/hooks/use-stored-interview-role";
@@ -26,9 +26,10 @@ import type { InterviewRole } from "@/features/interview-workspace/types/intervi
 
 type InterviewRoomProps = {
   roomId: string;
+  currentUser: Omit<CollaborativeEditorUser, "role">;
 };
 
-export function InterviewRoom({ roomId }: InterviewRoomProps) {
+export function InterviewRoom({ roomId, currentUser }: InterviewRoomProps) {
   const workspaceRef = useRef<HTMLDivElement>(null);
   const mockWorkspaceRoom = useMemo(
     () => getMockInterviewByRoomId(roomId),
@@ -36,56 +37,49 @@ export function InterviewRoom({ roomId }: InterviewRoomProps) {
   );
   const fallbackRole: InterviewRole = mockWorkspaceRoom?.role ?? "CANDIDATE";
   const role = useStoredInterviewRole(roomId, fallbackRole);
+  const collaborativeUser: CollaborativeEditorUser = {
+    ...currentUser,
+    role,
+  };
 
   const [problemPaneWidth, setProblemPaneWidth] = useState(42);
-  const [languageId, setLanguageId] = useState<LanguageId>("typescript");
+  const [languageId, setLanguageId] = useState<LanguageId>("cpp");
   const selectedLanguage = getLanguageOption(languageId);
-  const [code, setCode] = useState(selectedLanguage.initialCode);
   const [testCases, setTestCases] = useState<TestCase[]>(() =>
     MOCK_INTERVIEW_ROOM.testCases.map((testCase) => ({ ...testCase })),
   );
-  const [consoleLines, setConsoleLines] = useState<ConsoleLine[]>(() =>
-    MOCK_INTERVIEW_ROOM.consoleLines.map((line) => ({ ...line })),
-  );
+  const { error, isRunning, resetResults, results, runCode } =
+    useCodeExecution();
 
   function handleLanguageChange(nextLanguageId: LanguageId) {
-    const nextLanguage = getLanguageOption(nextLanguageId);
-
     setLanguageId(nextLanguageId);
-    setCode(nextLanguage.initialCode);
-    setTestCases(
-      MOCK_INTERVIEW_ROOM.testCases.map((testCase) => ({ ...testCase })),
-    );
-    setConsoleLines([
-      {
-        id: `line-language-${nextLanguageId}`,
-        level: "info",
-        text: `${nextLanguage.label} starter loaded.`,
-      },
-    ]);
+    resetResults();
   }
 
-  function handleRunCode() {
-    setTestCases((currentCases) =>
-      currentCases.map((testCase) => ({ ...testCase, status: "passed" })),
-    );
-    setConsoleLines([
-      {
-        id: "line-run-1",
-        level: "info",
-        text: `Running ${selectedLanguage.fileName} against 3 mock test cases...`,
-      },
-      {
-        id: "line-run-2",
-        level: "success",
-        text: "All visible test cases passed in 42ms.",
-      },
-    ]);
-    toast.success("Mock test run completed.");
+  function handleRunCode(sourceCode: string) {
+    void runCode({
+      language: selectedLanguage.id,
+      sourceCode,
+      testCases: testCases.map((testCase) => ({
+        input: testCase.input,
+        expectedOutput: testCase.expectedOutput,
+      })),
+    });
   }
 
-  function handleSubmit() {
-    toast.success("Mock submission captured for interviewer review.");
+  function handleAddTestCase(testCase: NewCodeExecutionTestCase) {
+    resetResults();
+    setTestCases((currentTestCases) => [
+      ...currentTestCases,
+      {
+        id: createTestCaseId(),
+        label: `Test Case ${currentTestCases.length + 1}`,
+        input: testCase.input,
+        expectedOutput: testCase.expectedOutput,
+        status: "idle",
+      },
+    ]);
+    toast.success("Test case added for this interview session.");
   }
 
   function startHorizontalResize(event: ReactPointerEvent<HTMLDivElement>) {
@@ -116,14 +110,20 @@ export function InterviewRoom({ roomId }: InterviewRoomProps) {
     <main className="flex h-dvh flex-col overflow-hidden bg-neutral-900 text-white">
       <LiveKitProvider roomId={roomId} role={role}>
         <RoomHeader
-          title={MOCK_INTERVIEW_ROOM.title}
-          status={MOCK_INTERVIEW_ROOM.status}
-          role={role}
-          roomId={roomId}
           interviewerVideo={
-            <VideoGrid compact remoteOnly maxTiles={1} className="justify-end" />
+            <VideoGrid compact remoteOnly maxTiles={1} />
           }
-          mediaControls={<MediaControls />}
+          runCodeAction={
+            <RunCodeButton
+              isRunning={isRunning}
+              onRun={() => {
+                const trigger = document.querySelector<HTMLButtonElement>(
+                  "[data-run-code-trigger]",
+                );
+                trigger?.click();
+              }}
+            />
+          }
         />
 
         <div className="relative min-h-0 flex-1 overflow-hidden p-3">
@@ -142,6 +142,14 @@ export function InterviewRoom({ roomId }: InterviewRoomProps) {
                 problem={MOCK_INTERVIEW_ROOM.problem}
                 role={role}
                 checklist={MOCK_INTERVIEW_ROOM.checklist}
+                languageSelector={
+                  <LanguageSelector
+                    value={selectedLanguage.id}
+                    languages={MOCK_INTERVIEW_ROOM.languages}
+                    disabled={role !== "CANDIDATE"}
+                    onChange={handleLanguageChange}
+                  />
+                }
                 className="rounded-none border-0 border-r border-white/10 shadow-none"
               />
             </div>
@@ -158,17 +166,17 @@ export function InterviewRoom({ roomId }: InterviewRoomProps) {
             </div>
 
             <div className="min-w-0 flex-1">
-              <CodeEditor
-                role={role}
-                code={code}
+              <CollaborativeEditor
+                roomId={roomId}
+                user={collaborativeUser}
                 language={selectedLanguage}
-                languages={MOCK_INTERVIEW_ROOM.languages}
                 testCases={testCases}
-                consoleLines={consoleLines}
-                onCodeChange={setCode}
+                executionError={error}
+                executionResults={results}
+                isRunningCode={isRunning}
                 onLanguageChange={handleLanguageChange}
-                onRun={handleRunCode}
-                onSubmit={handleSubmit}
+                onAddTestCase={handleAddTestCase}
+                onRunCode={handleRunCode}
                 className="rounded-none border-0 shadow-none"
               />
             </div>
@@ -181,4 +189,8 @@ export function InterviewRoom({ roomId }: InterviewRoomProps) {
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max);
+}
+
+function createTestCaseId() {
+  return globalThis.crypto?.randomUUID() ?? `case-${Date.now()}`;
 }

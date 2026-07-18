@@ -1,21 +1,19 @@
 "use client";
 
 import type { PointerEvent as ReactPointerEvent } from "react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
-import type { EditorProps } from "@monaco-editor/react";
-import { Play, SendHorizontal } from "lucide-react";
+import type { EditorProps, OnMount } from "@monaco-editor/react";
+import type { Monaco } from "@monaco-editor/react";
 
-import { Button } from "@/components/ui/button";
-import { OutputConsole } from "@/features/interview-room/components/OutputConsole";
-import { TestCasePanel } from "@/features/interview-room/components/TestCasePanel";
+import { ExecutionResultPanel } from "@/features/code-execution/components/ExecutionResultPanel";
+import { TestCasePanel } from "@/features/code-execution/components/TestCasePanel";
+import { useCollaborativeEditor } from "@/features/collaborative-editor/hooks/useCollaborativeEditor";
 import type {
-  ConsoleLine,
-  LanguageId,
-  LanguageOption,
-  RoomRole,
-  TestCase,
-} from "@/features/interview-room/types/interview-room";
+  CollaborativeEditorProps,
+  MonacoEditorInstance,
+} from "@/features/collaborative-editor/types/editor";
+import type { LanguageId } from "@/features/interview-room/types/interview-room";
 import { cn } from "@/lib/utils";
 
 const MonacoEditor = dynamic<EditorProps>(
@@ -24,42 +22,31 @@ const MonacoEditor = dynamic<EditorProps>(
     ssr: false,
     loading: () => (
       <div className="grid h-full min-h-[24rem] place-items-center bg-neutral-950 font-mono text-sm text-neutral-500">
-        Loading Monaco editor...
+        Loading collaborative editor...
       </div>
     ),
   },
 );
 
-type CodeEditorProps = {
-  role: RoomRole;
-  code: string;
-  language: LanguageOption;
-  languages: LanguageOption[];
-  testCases: TestCase[];
-  consoleLines: ConsoleLine[];
-  onCodeChange: (code: string) => void;
-  onLanguageChange: (languageId: LanguageId) => void;
-  onRun: () => void;
-  onSubmit: () => void;
-  className?: string;
-};
-
-export function CodeEditor({
-  role,
-  code,
+export function CollaborativeEditor({
+  roomId,
+  user,
   language,
-  languages,
   testCases,
-  consoleLines,
-  onCodeChange,
+  executionError,
+  executionResults,
+  isRunningCode,
   onLanguageChange,
-  onRun,
-  onSubmit,
+  onAddTestCase,
+  onRunCode,
   className,
-}: CodeEditorProps) {
+}: CollaborativeEditorProps) {
   const editorBodyRef = useRef<HTMLDivElement>(null);
+  const editorRef = useRef<MonacoEditorInstance | null>(null);
+  const monacoRef = useRef<Monaco | null>(null);
+  const lastSharedLanguageRef = useRef<LanguageId>(language.id);
   const [testPaneHeight, setTestPaneHeight] = useState(30);
-  const readOnly = role === "INTERVIEWER";
+  const canEdit = user.role === "CANDIDATE";
   const editorOptions: EditorProps["options"] = {
     automaticLayout: true,
     minimap: { enabled: false },
@@ -71,17 +58,58 @@ export function CodeEditor({
     smoothScrolling: true,
     tabSize: 2,
     padding: { top: 16, bottom: 16 },
-    readOnly,
+    readOnly: !canEdit,
     renderLineHighlight: "all",
     overviewRulerBorder: false,
   };
+  const {
+    bindEditor,
+    destroyBinding,
+    setSharedLanguage,
+  } = useCollaborativeEditor({
+    roomId,
+    user,
+    language,
+    canEdit,
+    onRemoteLanguageChange: onLanguageChange,
+  });
 
-  function handleLanguageChange(value: string) {
-    const nextLanguage = languages.find((option) => option.id === value);
+  const handleMount: OnMount = (editorInstance, monacoInstance) => {
+    editorRef.current = editorInstance;
+    monacoRef.current = monacoInstance;
+    bindEditor(editorInstance, monacoInstance);
+  };
 
-    if (nextLanguage) {
-      onLanguageChange(nextLanguage.id);
+  useEffect(() => () => destroyBinding(), [destroyBinding]);
+
+  useEffect(() => {
+    if (!canEdit) {
+      lastSharedLanguageRef.current = language.id;
+      return;
     }
+
+    if (lastSharedLanguageRef.current === language.id) {
+      return;
+    }
+
+    lastSharedLanguageRef.current = language.id;
+    setSharedLanguage(language.id, language.initialCode);
+  }, [canEdit, language.id, language.initialCode, setSharedLanguage]);
+
+  useEffect(() => {
+    const editorModel = editorRef.current?.getModel();
+
+    if (editorModel && monacoRef.current) {
+      monacoRef.current.editor.setModelLanguage(
+        editorModel,
+        language.monacoLanguage,
+      );
+    }
+  }, [language.monacoLanguage]);
+
+  function handleRunCode() {
+    const sourceCode = editorRef.current?.getValue() ?? "";
+    onRunCode(sourceCode);
   }
 
   function startVerticalResize(event: ReactPointerEvent<HTMLDivElement>) {
@@ -116,47 +144,15 @@ export function CodeEditor({
         className,
       )}
     >
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/10 px-3 py-2.5">
-        <div className="min-w-0">
-          <p className="text-sm font-semibold">
-            {readOnly ? "Candidate code view" : language.fileName}
-          </p>
-          <p className="mt-1 text-xs text-neutral-400">
-            {readOnly ? "Read-only interview review mode" : "Live coding workspace"}
-          </p>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-2">
-          <select
-            value={language.id}
-            onChange={(event) => handleLanguageChange(event.target.value)}
-            disabled={readOnly}
-            aria-label="Select coding language"
-            className="focus-ring h-9 rounded-md border border-white/10 bg-neutral-950 px-3 text-sm text-neutral-100 disabled:cursor-not-allowed disabled:opacity-70"
-          >
-            {languages.map((option) => (
-              <option key={option.id} value={option.id}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-          <Button
-            type="button"
-            variant="outline"
-            className="border-white/10 bg-white/[0.08] text-white hover:bg-white/[0.12]"
-            onClick={onRun}
-          >
-            <Play className="size-4" />
-            {readOnly ? "Run snapshot" : "Run"}
-          </Button>
-          {role === "CANDIDATE" ? (
-            <Button type="button" onClick={onSubmit}>
-              <SendHorizontal className="size-4" />
-              Submit
-            </Button>
-          ) : null}
-        </div>
-      </div>
+      <button
+        type="button"
+        data-run-code-trigger
+        className="sr-only"
+        onClick={handleRunCode}
+        disabled={isRunningCode}
+      >
+        Run Code
+      </button>
 
       <div ref={editorBodyRef} className="flex min-h-0 flex-1 flex-col">
         <div
@@ -166,11 +162,10 @@ export function CodeEditor({
           <MonacoEditor
             height="100%"
             language={language.monacoLanguage}
-            path={language.fileName}
-            value={code}
+            path={`gemprep-${roomId}-${language.fileName}`}
             theme="vs-dark"
             options={editorOptions}
-            onChange={(value) => onCodeChange(value ?? "")}
+            onMount={handleMount}
           />
         </div>
 
@@ -189,9 +184,18 @@ export function CodeEditor({
           className="min-h-0 shrink-0 overflow-hidden bg-black"
           style={{ flexBasis: `${testPaneHeight}%` }}
         >
-          <div className="grid h-full min-h-0 grid-rows-[auto_minmax(0,1fr)] gap-2 p-2.5">
-            <TestCasePanel testCases={testCases} />
-            <OutputConsole lines={consoleLines} />
+          <div className="grid h-full min-h-0 grid-cols-1 gap-2 p-2.5 xl:grid-cols-[minmax(0,1.05fr)_minmax(280px,0.95fr)]">
+            <TestCasePanel
+              testCases={testCases}
+              onAddTestCase={(testCase) => {
+                onAddTestCase(testCase);
+              }}
+            />
+            <ExecutionResultPanel
+              error={executionError}
+              isRunning={isRunningCode}
+              results={executionResults}
+            />
           </div>
         </div>
       </div>

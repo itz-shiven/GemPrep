@@ -11,8 +11,8 @@ export function FAQ() {
         <FadeIn>
           <SectionHeader
             eyebrow="FAQ"
-            title="Built as a foundation, ready for the product phases ahead."
-            description="This release intentionally stops at frontend architecture and landing experience."
+            title="Questions candidates ask before the first mock."
+            description="Clear expectations for matching, live rooms, AI feedback, and how GEMPREP keeps practice useful."
           />
         </FadeIn>
 

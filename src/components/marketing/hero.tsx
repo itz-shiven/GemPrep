@@ -9,15 +9,14 @@ import { heroStats, productSignals } from "@/lib/content/landing";
 
 export function Hero() {
   return (
-    <section id="hero" className="relative overflow-hidden border-b bg-background">
-      <HeroWorkspacePreview />
-      <div className="site-container relative z-10 grid min-h-[calc(100svh-8rem)] content-center py-14 sm:py-20">
-        <FadeIn className="max-w-3xl">
+    <section id="hero" className="overflow-hidden border-b bg-secondary/35">
+      <div className="site-container grid min-h-[calc(100svh-5rem)] items-center gap-10 py-14 sm:py-18 lg:grid-cols-[minmax(0,0.78fr)_minmax(0,1.22fr)] lg:py-20">
+        <FadeIn className="min-w-0 max-w-2xl">
           <Badge variant="success">Private preview opening soon</Badge>
-          <h1 className="mt-6 text-balance text-5xl font-semibold tracking-normal text-foreground sm:text-7xl">
+          <h1 className="mt-6 text-balance text-5xl font-semibold tracking-normal text-foreground sm:text-7xl lg:text-8xl">
             GEMPREP
           </h1>
-          <p className="mt-5 max-w-2xl text-lg leading-8 text-muted-foreground sm:text-xl">
+          <p className="mt-5 max-w-xl text-lg leading-8 text-muted-foreground sm:text-xl">
             AI-powered peer-to-peer technical interview practice for software
             engineers who want sharper reps, better feedback, and calmer loops.
           </p>
@@ -34,7 +33,7 @@ export function Hero() {
             </Button>
           </div>
 
-          <div className="mt-10 grid max-w-2xl grid-cols-3 divide-x rounded-lg border bg-background/84 text-sm shadow-sm backdrop-blur">
+          <div className="mt-10 grid max-w-xl grid-cols-3 divide-x rounded-lg border bg-background text-sm shadow-sm">
             {heroStats.map((stat) => (
               <div key={stat.label} className="min-w-0 px-4 py-3">
                 <p className="font-semibold text-foreground">{stat.value}</p>
@@ -45,6 +44,10 @@ export function Hero() {
             ))}
           </div>
         </FadeIn>
+
+        <FadeIn delay={0.08} className="min-w-0">
+          <HeroWorkspacePreview />
+        </FadeIn>
       </div>
     </section>
   );
@@ -52,9 +55,8 @@ export function Hero() {
 
 function HeroWorkspacePreview() {
   return (
-    <div className="pointer-events-none absolute inset-0" aria-hidden="true">
-      <div className="absolute inset-0 bg-secondary/45" />
-      <div className="absolute left-1/2 top-10 hidden w-[940px] -translate-x-[18%] rounded-lg border bg-background/76 shadow-soft backdrop-blur-sm lg:block">
+    <div className="pointer-events-none" aria-hidden="true">
+      <div className="hidden overflow-hidden rounded-lg border bg-background shadow-soft lg:block">
         <div className="flex h-12 items-center justify-between border-b px-4">
           <div className="flex items-center gap-2">
             <span className="size-2.5 rounded-full bg-muted-foreground/30" />
@@ -142,7 +144,7 @@ function HeroWorkspacePreview() {
           </div>
         </div>
       </div>
-      <div className="absolute inset-x-4 bottom-5 rounded-lg border bg-background/82 p-4 shadow-soft backdrop-blur-sm lg:hidden">
+      <div className="rounded-lg border bg-background p-4 shadow-soft lg:hidden">
         <div className="flex items-center justify-between gap-3">
           <div>
             <p className="text-sm font-medium">Guided peer session</p>

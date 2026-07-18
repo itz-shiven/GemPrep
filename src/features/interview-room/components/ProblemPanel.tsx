@@ -17,6 +17,7 @@ type ProblemPanelProps = {
   problem: InterviewProblem;
   role: RoomRole;
   checklist: InterviewChecklistItem[];
+  languageSelector?: ReactNode;
   className?: string;
 };
 
@@ -24,6 +25,7 @@ export function ProblemPanel({
   problem,
   role,
   checklist,
+  languageSelector,
   className,
 }: ProblemPanelProps) {
   const [evaluationNotes, setEvaluationNotes] = useState(
@@ -51,9 +53,7 @@ export function ProblemPanel({
           <Badge className={difficultyClassName(problem.difficulty)}>
             {problem.difficulty}
           </Badge>
-          <Badge className="border-white/10 bg-white/[0.08] text-neutral-200">
-            Problem Workspace
-          </Badge>
+          {languageSelector}
         </div>
         <h1 className="mt-3 text-lg font-semibold tracking-normal">
           {problem.title}

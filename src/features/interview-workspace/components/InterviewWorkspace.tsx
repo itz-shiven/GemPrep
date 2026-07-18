@@ -23,7 +23,7 @@ export function InterviewWorkspace() {
         transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
         className="rounded-lg border bg-background p-6 shadow-sm"
       >
-        <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+        <div>
           <div>
             <Badge variant="success">Interview Workspace</Badge>
             <h1 className="mt-4 text-balance text-3xl font-semibold tracking-normal sm:text-4xl">
@@ -34,12 +34,11 @@ export function InterviewWorkspace() {
               room link to preview the waiting-room flow.
             </p>
           </div>
-          <CreateInterview />
         </div>
       </motion.section>
 
-      <div className="grid gap-4 xl:grid-cols-[0.9fr_1.1fr]">
-        <Card>
+      <div className="grid gap-5 lg:grid-cols-2">
+        <Card className="h-full">
           <CardHeader>
             <span className="mb-3 grid size-10 place-items-center rounded-lg border bg-secondary text-primary">
               <Video className="size-5" aria-hidden="true" />

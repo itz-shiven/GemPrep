@@ -83,9 +83,16 @@ export function JoinInterview() {
             aria-label="Interview room link"
           />
           {error ? <p className="text-sm text-destructive">{error}</p> : null}
-          <Button type="submit" variant="outline" className="w-full">
-            Detect room
-          </Button>
+          <div className="flex justify-end">
+            <Button
+              type="submit"
+              variant="outline"
+              size="sm"
+              className="w-full px-4 sm:w-auto"
+            >
+              Detect room
+            </Button>
+          </div>
         </form>
 
         {detectedRoom ? (

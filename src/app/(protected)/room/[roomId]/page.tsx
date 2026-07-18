@@ -26,5 +26,13 @@ export default async function InterviewRoomPage({ params }: InterviewRoomPagePro
     redirect(ROUTES.onboarding);
   }
 
-  return <InterviewRoom roomId={roomId} />;
+  return (
+    <InterviewRoom
+      roomId={roomId}
+      currentUser={{
+        id: user.id,
+        name: user.fullName ?? user.username ?? user.email,
+      }}
+    />
+  );
 }
