@@ -3,13 +3,17 @@
 import { CheckCircle2, XCircle } from "lucide-react";
 
 import type { CodeExecutionResult } from "@/features/code-execution/types/execution";
+import type { InterviewRoomTheme } from "@/features/interview-room/types/interview-room";
 import { cn } from "@/lib/utils";
 
 type TestCaseResultProps = {
   result: CodeExecutionResult;
+  theme?: InterviewRoomTheme;
 };
 
-export function TestCaseResult({ result }: TestCaseResultProps) {
+export function TestCaseResult({ result, theme = "dark" }: TestCaseResultProps) {
+  const isDark = theme === "dark";
+
   return (
     <article
       className={cn(
@@ -25,29 +29,52 @@ export function TestCaseResult({ result }: TestCaseResultProps) {
         ) : (
           <XCircle className="size-4 text-red-300" aria-hidden="true" />
         )}
-        <p className="text-xs font-semibold text-neutral-100">
+        <p
+          className={cn(
+            "text-xs font-semibold",
+            isDark ? "text-neutral-100" : "text-foreground",
+          )}
+        >
           {result.label} {result.passed ? "Passed" : "Failed"}
         </p>
-        <span className="ml-auto text-[11px] text-neutral-500">
+        <span
+          className={cn(
+            "ml-auto text-[11px]",
+            isDark ? "text-neutral-500" : "text-muted-foreground",
+          )}
+        >
           {result.status}
         </span>
       </div>
 
       <div className="mt-2 grid gap-2 text-[11px] sm:grid-cols-2">
-        <ResultBlock label="Expected" value={result.expectedOutput} />
+        <ResultBlock
+          label="Expected"
+          value={result.expectedOutput}
+          theme={theme}
+        />
         <ResultBlock
           label="Received"
           value={result.actualOutput || "(no output)"}
+          theme={theme}
         />
       </div>
 
       {result.compile_output || result.stderr ? (
         <div className="mt-2 grid gap-2 text-[11px]">
           {result.compile_output ? (
-            <ResultBlock label="Compiler output" value={result.compile_output} />
+            <ResultBlock
+              label="Compiler output"
+              value={result.compile_output}
+              theme={theme}
+            />
           ) : null}
           {result.stderr ? (
-            <ResultBlock label="Runtime stderr" value={result.stderr} />
+            <ResultBlock
+              label="Runtime stderr"
+              value={result.stderr}
+              theme={theme}
+            />
           ) : null}
         </div>
       ) : null}
@@ -55,11 +82,33 @@ export function TestCaseResult({ result }: TestCaseResultProps) {
   );
 }
 
-function ResultBlock({ label, value }: { label: string; value: string }) {
+function ResultBlock({
+  label,
+  value,
+  theme,
+}: {
+  label: string;
+  value: string;
+  theme: InterviewRoomTheme;
+}) {
+  const isDark = theme === "dark";
+
   return (
     <div>
-      <p className="font-medium text-neutral-500">{label}</p>
-      <pre className="mt-1 whitespace-pre-wrap break-words rounded bg-black/45 p-2 font-mono text-neutral-200">
+      <p
+        className={cn(
+          "font-medium",
+          isDark ? "text-neutral-500" : "text-muted-foreground",
+        )}
+      >
+        {label}
+      </p>
+      <pre
+        className={cn(
+          "mt-1 whitespace-pre-wrap break-words rounded p-2 font-mono",
+          isDark ? "bg-black/45 text-neutral-200" : "bg-background text-foreground",
+        )}
+      >
         {value}
       </pre>
     </div>

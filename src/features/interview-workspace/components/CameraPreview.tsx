@@ -1,9 +1,10 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Mic, MicOff, Video, VideoOff } from "lucide-react";
+import { MoreVertical, VideoOff } from "lucide-react";
 import { useEffect, useRef } from "react";
 
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 type CameraPreviewProps = {
@@ -13,6 +14,8 @@ type CameraPreviewProps = {
   mediaStream?: MediaStream | null;
   audioLevel?: number;
   permissionError?: string | null;
+  onRequestPermissions?: () => void;
+  onOpenSettings?: () => void;
   className?: string;
 };
 
@@ -21,13 +24,15 @@ export function CameraPreview({
   cameraEnabled,
   micEnabled,
   mediaStream,
-  audioLevel = 0,
   permissionError,
+  onRequestPermissions,
+  onOpenSettings,
   className,
 }: CameraPreviewProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const initials = getInitials(userName);
   const hasCameraTrack = Boolean(mediaStream?.getVideoTracks().length);
+  const needsPermission = !mediaStream && (cameraEnabled || micEnabled);
 
   useEffect(() => {
     const videoElement = videoRef.current;
@@ -49,18 +54,11 @@ export function CameraPreview({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
       className={cn(
-        "relative min-h-[26rem] overflow-hidden rounded-xl border border-white/10 bg-neutral-950 shadow-2xl",
+        "relative overflow-hidden rounded-lg border border-border/70 bg-[#202124] shadow-soft",
         className,
       )}
     >
-      <div
-        className={cn(
-          "absolute inset-0 transition-colors duration-300",
-          cameraEnabled && hasCameraTrack
-            ? "bg-neutral-950"
-            : "bg-neutral-950",
-        )}
-      />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_18%,rgba(255,255,255,0.05),transparent_42%),#202124]" />
 
       {cameraEnabled && hasCameraTrack ? (
         <video
@@ -72,68 +70,56 @@ export function CameraPreview({
         />
       ) : null}
 
-      <div className="absolute left-4 top-4 flex items-center gap-2 rounded-full border border-white/10 bg-black/35 px-3 py-1.5 text-xs font-medium text-white backdrop-blur">
-        {cameraEnabled && hasCameraTrack ? (
-          <Video className="size-3.5" aria-hidden="true" />
-        ) : (
-          <VideoOff className="size-3.5" aria-hidden="true" />
-        )}
-        {cameraEnabled && hasCameraTrack ? "Camera on" : "Camera off"}
+      <div className="absolute left-5 top-5 z-10 max-w-[70%] truncate text-sm font-semibold uppercase tracking-normal text-white">
+        {userName}
       </div>
 
+      <button
+        type="button"
+        aria-label="Open device settings"
+        onClick={onOpenSettings}
+        className="absolute right-5 top-5 z-10 grid size-8 place-items-center rounded-full text-white transition-colors hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white/70"
+      >
+        <MoreVertical className="size-5" aria-hidden="true" />
+      </button>
+
       <div className="absolute inset-0 grid place-items-center px-6 text-center">
-        {cameraEnabled && hasCameraTrack ? null : cameraEnabled ? (
+        {cameraEnabled && hasCameraTrack ? null : needsPermission ? (
+          <div className="grid place-items-center gap-5">
+            <p className="max-w-3xl text-balance text-2xl font-medium tracking-normal text-white sm:text-3xl">
+              Do you want people to see and hear you in the meeting?
+            </p>
+            <Button
+              type="button"
+              className="h-11 rounded-md bg-primary px-8 text-sm font-semibold text-primary-foreground shadow-sm hover:bg-primary/92"
+              onClick={onRequestPermissions}
+            >
+              Allow microphone and camera
+            </Button>
+            {permissionError ? (
+              <p className="max-w-md text-xs leading-5 text-neutral-300">
+                {permissionError}
+              </p>
+            ) : null}
+          </div>
+        ) : cameraEnabled ? (
           <div className="grid place-items-center gap-4">
-            <div className="grid size-28 place-items-center rounded-full border border-white/15 bg-white/10 text-3xl font-semibold text-white shadow-2xl">
+            <div className="grid size-28 place-items-center rounded-full bg-white/10 text-3xl font-semibold text-white shadow-2xl">
               {initials}
             </div>
             <p className="max-w-sm text-sm leading-6 text-neutral-300">
               {permissionError ??
-                "Allow camera access to preview your video before joining."}
+                "Camera preview is not available. You can still join when ready."}
             </p>
           </div>
         ) : (
           <div className="grid place-items-center gap-4">
-            <div className="grid size-24 place-items-center rounded-full border border-white/10 bg-white/5 text-neutral-300">
+            <div className="grid size-24 place-items-center rounded-full bg-white/10 text-neutral-200">
               <VideoOff className="size-8" aria-hidden="true" />
             </div>
-            <div>
-              <p className="text-lg font-medium text-white">Camera is off</p>
-              <p className="mt-2 max-w-sm text-sm leading-6 text-neutral-400">
-                You can join with camera off and turn it on once the interview
-                room is ready.
-              </p>
-            </div>
+            <p className="text-lg font-medium text-white">Camera is off</p>
           </div>
         )}
-      </div>
-
-      <div className="absolute bottom-4 left-4 flex min-w-0 items-center gap-2 rounded-full border border-white/10 bg-black/35 px-3 py-1.5 text-sm font-medium text-white backdrop-blur">
-        <span className="max-w-[14rem] truncate">{userName}</span>
-      </div>
-
-      <div
-        className={cn(
-          "absolute bottom-4 right-4 flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium backdrop-blur",
-          micEnabled
-            ? "border-white/10 bg-black/35 text-white"
-            : "border-red-400/20 bg-red-500/[0.18] text-red-100",
-        )}
-      >
-        {micEnabled ? (
-          <Mic className="size-3.5" aria-hidden="true" />
-        ) : (
-          <MicOff className="size-3.5" aria-hidden="true" />
-        )}
-        {micEnabled ? "Mic on" : "Muted"}
-        {micEnabled ? (
-          <span className="ml-1 h-1.5 w-12 overflow-hidden rounded-full bg-white/20">
-            <span
-              className="block h-full rounded-full bg-primary transition-all"
-              style={{ width: `${Math.min(Math.max(audioLevel, 0), 100)}%` }}
-            />
-          </span>
-        ) : null}
       </div>
     </motion.div>
   );

@@ -11,11 +11,6 @@ import {
 } from "livekit-client";
 import { MonacoBinding } from "y-monaco";
 import * as Y from "yjs";
-import {
-  applyAwarenessUpdate,
-  Awareness,
-  encodeAwarenessUpdate,
-} from "y-protocols/awareness";
 
 import {
   createEditorYDoc,
@@ -28,10 +23,8 @@ import {
   encodeCollaborationMessage,
   getCollaborationTopic,
 } from "@/features/collaborative-editor/lib/websocket";
-import { useEditorPresence } from "@/features/collaborative-editor/hooks/useEditorPresence";
 import type {
   CollaborationStatus,
-  CollaborativeEditorUser,
   MonacoEditorInstance,
 } from "@/features/collaborative-editor/types/editor";
 import type {
@@ -41,7 +34,6 @@ import type {
 
 type UseCollaborativeEditorParams = {
   roomId: string;
-  user: CollaborativeEditorUser;
   language: LanguageOption;
   canEdit: boolean;
   onRemoteLanguageChange: (languageId: LanguageId) => void;
@@ -49,18 +41,15 @@ type UseCollaborativeEditorParams = {
 
 export function useCollaborativeEditor({
   roomId,
-  user,
   language,
   canEdit,
   onRemoteLanguageChange,
 }: UseCollaborativeEditorParams) {
   const room = useRoomContext();
   const { doc, codeText, metadata } = useMemo(() => createEditorYDoc(), []);
-  const awareness = useMemo(() => new Awareness(doc), [doc]);
   const liveKitOrigin = useMemo(() => ({ provider: "livekit-yjs" }), []);
   const bindingRef = useRef<MonacoBinding | null>(null);
   const [status, setStatus] = useState<CollaborationStatus>("connecting");
-  const participants = useEditorPresence(awareness, user, canEdit);
 
   useEffect(() => {
     if (!canEdit) {
@@ -68,12 +57,10 @@ export function useCollaborativeEditor({
     }
 
     seedEditorDocument({
-      codeText,
       metadata,
-      initialCode: language.initialCode,
       languageId: language.id,
     });
-  }, [canEdit, codeText, language.id, language.initialCode, metadata]);
+  }, [canEdit, language.id, metadata]);
 
   useEffect(() => {
     const topic = getCollaborationTopic(roomId);
@@ -94,10 +81,6 @@ export function useCollaborativeEditor({
         COLLABORATION_MESSAGE_TYPES.syncRequest,
         Y.encodeStateVector(doc),
       );
-      publishMessage(
-        COLLABORATION_MESSAGE_TYPES.awareness,
-        encodeAwarenessUpdate(awareness, [awareness.clientID]),
-      );
     }
 
     function handleDocUpdate(update: Uint8Array, origin: unknown) {
@@ -106,26 +89,6 @@ export function useCollaborativeEditor({
       }
 
       publishMessage(COLLABORATION_MESSAGE_TYPES.update, update);
-    }
-
-    function handleAwarenessUpdate(
-      changes: { added: number[]; updated: number[]; removed: number[] },
-      origin: unknown,
-    ) {
-      if (origin === liveKitOrigin) {
-        return;
-      }
-
-      const changedClients = [
-        ...changes.added,
-        ...changes.updated,
-        ...changes.removed,
-      ];
-
-      publishMessage(
-        COLLABORATION_MESSAGE_TYPES.awareness,
-        encodeAwarenessUpdate(awareness, changedClients),
-      );
     }
 
     function handleDataReceived(
@@ -160,9 +123,6 @@ export function useCollaborativeEditor({
         return;
       }
 
-      if (message.type === COLLABORATION_MESSAGE_TYPES.awareness) {
-        applyAwarenessUpdate(awareness, message.payload, liveKitOrigin);
-      }
     }
 
     function handleConnected() {
@@ -179,7 +139,6 @@ export function useCollaborativeEditor({
     }
 
     doc.on("update", handleDocUpdate);
-    awareness.on("update", handleAwarenessUpdate);
     room.on(RoomEvent.DataReceived, handleDataReceived);
     room.on(RoomEvent.Connected, handleConnected);
     room.on(RoomEvent.Reconnected, handleConnected);
@@ -193,7 +152,6 @@ export function useCollaborativeEditor({
 
     return () => {
       doc.off("update", handleDocUpdate);
-      awareness.off("update", handleAwarenessUpdate);
       room.off(RoomEvent.DataReceived, handleDataReceived);
       room.off(RoomEvent.Connected, handleConnected);
       room.off(RoomEvent.Reconnected, handleConnected);
@@ -201,7 +159,7 @@ export function useCollaborativeEditor({
       room.off(RoomEvent.Reconnecting, handleReconnecting);
       room.off(RoomEvent.Disconnected, handleDisconnected);
     };
-  }, [awareness, doc, liveKitOrigin, room, roomId]);
+  }, [doc, liveKitOrigin, room, roomId]);
 
   useEffect(() => () => doc.destroy(), [doc]);
 
@@ -238,26 +196,21 @@ export function useCollaborativeEditor({
         codeText,
         model,
         new Set<editor.IStandaloneCodeEditor>([editorInstance]),
-        awareness,
+        null,
       );
     },
-    [awareness, canEdit, codeText, language.monacoLanguage],
+    [canEdit, codeText, language.monacoLanguage],
   );
 
   const setSharedLanguage = useCallback(
-    (languageId: LanguageId, initialCode: string) => {
+    (languageId: LanguageId) => {
       if (!canEdit) {
         return;
       }
 
       metadata.set("languageId", languageId);
-
-      doc.transact(() => {
-        codeText.delete(0, codeText.length);
-        codeText.insert(0, initialCode);
-      });
     },
-    [canEdit, codeText, doc, metadata],
+    [canEdit, metadata],
   );
 
   const destroyBinding = useCallback(() => {
@@ -266,10 +219,8 @@ export function useCollaborativeEditor({
   }, []);
 
   return {
-    awareness,
     bindEditor,
     destroyBinding,
-    participants,
     setSharedLanguage,
     status,
   };

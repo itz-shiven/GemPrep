@@ -31,6 +31,8 @@ export class PistonExecutionError extends Error {
   }
 }
 
+const PUBLIC_PISTON_EXECUTE_URL = "https://emkc.org/api/v2/piston/execute";
+
 export async function executePistonTestCases({
   runtime,
   sourceCode,
@@ -112,8 +114,12 @@ function getPistonErrorMessage(
   statusCode: number,
   body: PistonExecutionResponse | PistonApiErrorBody,
 ) {
+  const serviceMessage = getServiceMessage(body);
+
   if (statusCode === 401 || statusCode === 403) {
-    return "Piston rejected the execution request.";
+    return serviceMessage
+      ? `Piston rejected the execution request: ${serviceMessage}`
+      : "Piston rejected the execution request.";
   }
 
   if (statusCode === 429) {
@@ -123,8 +129,6 @@ function getPistonErrorMessage(
   if (statusCode >= 500) {
     return "Piston execution service is unavailable right now.";
   }
-
-  const serviceMessage = getServiceMessage(body);
 
   return serviceMessage
     ? `Piston rejected the execution request: ${serviceMessage}`
@@ -160,8 +164,28 @@ function getServiceMessage(body: PistonExecutionResponse | PistonApiErrorBody) {
 }
 
 function getPistonApiUrl() {
-  return (
-    process.env.PISTON_API_URL ??
-    "https://emkc.org/api/v2/piston/execute"
-  ).trim();
+  const pistonApiUrl = process.env.PISTON_API_URL?.trim();
+
+  if (!pistonApiUrl) {
+    throw new PistonExecutionError(
+      "Code execution is not configured. Set PISTON_API_URL to a self-hosted Piston /api/v2/execute endpoint.",
+      500,
+    );
+  }
+
+  if (pistonApiUrl === PUBLIC_PISTON_EXECUTE_URL) {
+    throw new PistonExecutionError(
+      "The public Piston API is whitelist-only. Set PISTON_API_URL to a self-hosted or approved Piston endpoint.",
+      503,
+    );
+  }
+
+  try {
+    return new URL(pistonApiUrl).toString();
+  } catch {
+    throw new PistonExecutionError(
+      "PISTON_API_URL must be a valid Piston execute endpoint.",
+      500,
+    );
+  }
 }

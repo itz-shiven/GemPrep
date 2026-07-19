@@ -10,157 +10,30 @@ import type {
   TestCase,
 } from "@/features/interview-room/types/interview-room";
 
-const cppStarter = `#include <bits/stdc++.h>
-using namespace std;
-
-int maxGemPairScore(vector<int>& gems, int target) {
-    unordered_set<int> seen;
-    int bestScore = -1;
-
-    for (int value : gems) {
-        int complement = target - value;
-
-        if (seen.count(complement)) {
-            bestScore = max(bestScore, value + complement);
-        }
-
-        seen.insert(value);
-    }
-
-    return bestScore;
-}
-
-int main() {
-    int n;
-    cin >> n;
-
-    vector<int> gems(n);
-    for (int i = 0; i < n; i++) {
-        cin >> gems[i];
-    }
-
-    int target;
-    cin >> target;
-
-    cout << maxGemPairScore(gems, target) << "\\n";
-    return 0;
-}
-`;
-
-const javaStarter = `import java.util.*;
-
-class Main {
-    static int maxGemPairScore(int[] gems, int target) {
-        Set<Integer> seen = new HashSet<>();
-        int bestScore = -1;
-
-        for (int value : gems) {
-            int complement = target - value;
-
-            if (seen.contains(complement)) {
-                bestScore = Math.max(bestScore, value + complement);
-            }
-
-            seen.add(value);
-        }
-
-        return bestScore;
-    }
-
-    public static void main(String[] args) {
-        Scanner scanner = new Scanner(System.in);
-        int n = scanner.nextInt();
-        int[] gems = new int[n];
-
-        for (int i = 0; i < n; i++) {
-            gems[i] = scanner.nextInt();
-        }
-
-        int target = scanner.nextInt();
-        System.out.println(maxGemPairScore(gems, target));
-    }
-}
-`;
-
-const javaScriptStarter = `const input = require("fs").readFileSync(0, "utf8").trim().split(/\\s+/).map(Number);
-const n = input[0] ?? 0;
-const gems = input.slice(1, 1 + n);
-const target = input[1 + n] ?? 0;
-
-function maxGemPairScore(gems, target) {
-  const seen = new Set();
-  let bestScore = -1;
-
-  for (const value of gems) {
-    const complement = target - value;
-
-    if (seen.has(complement)) {
-      bestScore = Math.max(bestScore, value + complement);
-    }
-
-    seen.add(value);
-  }
-
-  return bestScore;
-}
-
-console.log(maxGemPairScore(gems, target));
-`;
-
-const pythonStarter = `import sys
-
-
-def max_gem_pair_score(gems, target):
-    seen = set()
-    best_score = -1
-
-    for value in gems:
-        complement = target - value
-
-        if complement in seen:
-            best_score = max(best_score, value + complement)
-
-        seen.add(value)
-
-    return best_score
-
-
-values = list(map(int, sys.stdin.read().strip().split()))
-n = values[0] if values else 0
-gems = values[1:1 + n]
-target = values[1 + n] if len(values) > 1 + n else 0
-
-print(max_gem_pair_score(gems, target))
-`;
-
 export const ROOM_LANGUAGES: LanguageOption[] = [
   {
     id: "cpp",
     label: "C++",
     monacoLanguage: "cpp",
     fileName: "solution.cpp",
-    initialCode: cppStarter,
   },
   {
     id: "java",
     label: "Java",
     monacoLanguage: "java",
     fileName: "Solution.java",
-    initialCode: javaStarter,
   },
   {
     id: "python",
     label: "Python",
     monacoLanguage: "python",
     fileName: "solution.py",
-    initialCode: pythonStarter,
   },
   {
     id: "javascript",
     label: "JavaScript",
     monacoLanguage: "javascript",
     fileName: "solution.js",
-    initialCode: javaScriptStarter,
   },
 ];
 

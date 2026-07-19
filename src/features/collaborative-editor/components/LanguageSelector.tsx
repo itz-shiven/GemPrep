@@ -1,6 +1,7 @@
 "use client";
 
 import type {
+  InterviewRoomTheme,
   LanguageId,
   LanguageOption,
 } from "@/features/interview-room/types/interview-room";
@@ -10,6 +11,7 @@ type LanguageSelectorProps = {
   value: LanguageId;
   languages: LanguageOption[];
   disabled?: boolean;
+  theme?: InterviewRoomTheme;
   onChange: (languageId: LanguageId) => void;
 };
 
@@ -17,8 +19,11 @@ export function LanguageSelector({
   value,
   languages,
   disabled = false,
+  theme = "dark",
   onChange,
 }: LanguageSelectorProps) {
+  const isDark = theme === "dark";
+
   return (
     <label className="inline-flex items-center">
       <span className="sr-only">Select coding language</span>
@@ -28,8 +33,10 @@ export function LanguageSelector({
         disabled={disabled}
         aria-label="Select coding language"
         className={cn(
-          "focus-ring h-9 rounded-md border border-white/10 bg-neutral-950 px-3 text-sm text-neutral-100 transition-colors",
-          "hover:border-white/20 disabled:cursor-not-allowed disabled:opacity-60",
+          "focus-ring h-9 rounded-md border px-3 text-sm transition-colors disabled:cursor-not-allowed disabled:opacity-60",
+          isDark
+            ? "border-white/10 bg-neutral-950 text-neutral-100 hover:border-white/20"
+            : "border-border bg-background text-foreground hover:border-neutral-400",
         )}
       >
         {languages.map((option) => (

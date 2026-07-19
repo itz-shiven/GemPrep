@@ -1,12 +1,9 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { ArrowLeft } from "lucide-react";
 
-import { Badge } from "@/components/ui/badge";
 import { CameraPreview } from "@/features/interview-workspace/components/CameraPreview";
 import { DeviceControls } from "@/features/interview-workspace/components/DeviceControls";
 import { InterviewInfoCard } from "@/features/interview-workspace/components/InterviewInfoCard";
@@ -14,7 +11,6 @@ import { getMockInterviewByRoomId } from "@/features/interview-workspace/data/mo
 import { useStoredInterviewRole } from "@/features/interview-workspace/hooks/use-stored-interview-role";
 import { DeviceSelector } from "@/features/livekit/components/DeviceSelector";
 import {
-  INTERVIEW_ROLE_LABELS,
   type InterviewRole,
   type MockInterviewRoom,
 } from "@/features/interview-workspace/types/interview";
@@ -47,6 +43,7 @@ export function WaitingRoom({ roomId, user }: WaitingRoomProps) {
   const [selectedMicrophoneId, setSelectedMicrophoneId] = useState("");
   const [permissionError, setPermissionError] = useState<string | null>(null);
   const [joinedIntent, setJoinedIntent] = useState(false);
+  const [permissionRequestCount, setPermissionRequestCount] = useState(0);
   const audioLevel = useAudioLevel(mediaStream, micEnabled);
   const userName = user.fullName || "GEMPREP user";
   const videoDevices = devices.filter((device) => device.kind === "videoinput");
@@ -123,7 +120,13 @@ export function WaitingRoom({ roomId, user }: WaitingRoomProps) {
       active = false;
       nextStream?.getTracks().forEach((track) => track.stop());
     };
-  }, [cameraEnabled, micEnabled, selectedCameraId, selectedMicrophoneId]);
+  }, [
+    cameraEnabled,
+    micEnabled,
+    permissionRequestCount,
+    selectedCameraId,
+    selectedMicrophoneId,
+  ]);
 
   function handleJoinInterview() {
     setJoinedIntent(true);
@@ -144,86 +147,83 @@ export function WaitingRoom({ roomId, user }: WaitingRoomProps) {
   }
 
   return (
-    <main className="min-h-dvh bg-neutral-950 text-white">
-      <div className="mx-auto flex min-h-dvh w-full max-w-[1500px] flex-col px-4 py-4 sm:px-6 lg:px-8">
-        <header className="flex min-h-14 flex-wrap items-center justify-between gap-3">
-          <Link
-            href={ROUTES.interviewWorkspace}
-            className="inline-flex items-center gap-2 rounded-md border border-white/10 bg-white/[0.08] px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-white/[0.12] focus:outline-none focus:ring-2 focus:ring-white/70"
-          >
-            <ArrowLeft className="size-4" aria-hidden="true" />
-            Interview Workspace
-          </Link>
-          <div className="flex flex-wrap items-center gap-2">
-            <Badge className="border-white/[0.12] bg-white/10 text-white">
-              Mock waiting room
-            </Badge>
-            <Badge className="border-white/[0.12] bg-white/10 text-white">
-              {INTERVIEW_ROLE_LABELS[role]}
-            </Badge>
-          </div>
-        </header>
-
-        <div className="grid flex-1 gap-5 py-4 lg:grid-cols-[minmax(0,7fr)_minmax(20rem,3fr)]">
-          <section className="relative min-h-[30rem] lg:min-h-full">
-            <CameraPreview
-              userName={userName}
-              cameraEnabled={cameraEnabled}
-              micEnabled={micEnabled}
-              mediaStream={mediaStream}
-              audioLevel={audioLevel}
-              permissionError={permissionError}
-              className="h-full"
-            />
-            <DeviceControls
-              micEnabled={micEnabled}
-              cameraEnabled={cameraEnabled}
-              onToggleMic={() => setMicEnabled((enabled) => !enabled)}
-              onToggleCamera={() => setCameraEnabled((enabled) => !enabled)}
-              onOpenSettings={handleOpenDeviceSettings}
-            />
-          </section>
-
-          <aside className="grid gap-3">
-            <div className="rounded-xl border border-white/10 bg-background p-4 text-foreground shadow-2xl">
-              <p className="text-sm font-semibold">Device setup</p>
-              <p className="mt-1 text-xs leading-5 text-muted-foreground">
-                Choose your camera and microphone before joining the LiveKit room.
-              </p>
-              <div className="mt-4 grid gap-3">
-                <DeviceSelector
-                  label="Camera"
-                  devices={videoDevices}
-                  selectedDeviceId={selectedCameraId}
-                  onChange={setSelectedCameraId}
-                  disabled={!cameraEnabled}
-                />
-                <DeviceSelector
-                  label="Microphone"
-                  devices={audioDevices}
-                  selectedDeviceId={selectedMicrophoneId}
-                  onChange={setSelectedMicrophoneId}
-                  disabled={!micEnabled}
-                />
-              </div>
-              {permissionError ? (
-                <p className="mt-3 rounded-md border border-red-400/20 bg-red-500/[0.12] px-3 py-2 text-xs leading-5 text-red-200">
-                  {permissionError}
-                </p>
-              ) : null}
+    <main className="h-dvh overflow-hidden bg-secondary/45 text-foreground">
+      <div className="mx-auto grid h-full w-full max-w-[1500px] items-center gap-8 px-5 py-6 sm:px-8 lg:grid-cols-[minmax(0,7fr)_minmax(20rem,3fr)] lg:px-10">
+        <section className="min-h-0">
+          <div className="mx-auto w-full max-w-[58rem]">
+            <div className="relative h-[min(58dvh,520px)] min-h-[300px]">
+              <CameraPreview
+                userName={userName}
+                cameraEnabled={cameraEnabled}
+                micEnabled={micEnabled}
+                mediaStream={mediaStream}
+                audioLevel={audioLevel}
+                permissionError={permissionError}
+                onRequestPermissions={() =>
+                  setPermissionRequestCount((count) => count + 1)
+                }
+                onOpenSettings={handleOpenDeviceSettings}
+                className="h-full"
+              />
+              <DeviceControls
+                micEnabled={micEnabled}
+                cameraEnabled={cameraEnabled}
+                onToggleMic={() => setMicEnabled((enabled) => !enabled)}
+                onToggleCamera={() => setCameraEnabled((enabled) => !enabled)}
+                showPermissionWarning={Boolean(permissionError)}
+              />
             </div>
 
-            <InterviewInfoCard
-              userName={userName}
-              role={role}
-              room={{ ...room, role }}
-              joinedIntent={joinedIntent}
-              onJoin={handleJoinInterview}
-              onOpenDeviceSettings={handleOpenDeviceSettings}
-              onOpenAudioSettings={handleOpenAudioSettings}
-            />
-          </aside>
-        </div>
+            <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+              <DeviceSelector
+                label="Microphone"
+                devices={audioDevices}
+                selectedDeviceId={selectedMicrophoneId}
+                onChange={setSelectedMicrophoneId}
+                disabled={!micEnabled}
+              />
+              <DeviceSelector
+                label="Speaker"
+                devices={audioDevices}
+                selectedDeviceId={selectedMicrophoneId}
+                onChange={setSelectedMicrophoneId}
+                disabled={!micEnabled}
+              />
+              <DeviceSelector
+                label="Camera"
+                devices={videoDevices}
+                selectedDeviceId={selectedCameraId}
+                onChange={setSelectedCameraId}
+                disabled={!cameraEnabled}
+              />
+              <DeviceSelector
+                label="Background"
+                devices={[]}
+                selectedDeviceId=""
+                onChange={() => undefined}
+                disabled
+              />
+            </div>
+
+            {permissionError ? (
+              <p className="mt-3 line-clamp-2 text-center text-xs leading-5 text-muted-foreground">
+                {permissionError}
+              </p>
+            ) : null}
+          </div>
+        </section>
+
+        <aside className="min-h-0">
+          <InterviewInfoCard
+            userName={userName}
+            role={role}
+            room={{ ...room, role }}
+            joinedIntent={joinedIntent}
+            onJoin={handleJoinInterview}
+            onOpenDeviceSettings={handleOpenDeviceSettings}
+            onOpenAudioSettings={handleOpenAudioSettings}
+          />
+        </aside>
       </div>
     </main>
   );

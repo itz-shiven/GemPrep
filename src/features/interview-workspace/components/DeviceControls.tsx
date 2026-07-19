@@ -1,6 +1,6 @@
 "use client";
 
-import { Mic, MicOff, Settings, Video, VideoOff } from "lucide-react";
+import { Mic, MicOff, Video, VideoOff } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
@@ -9,7 +9,7 @@ type DeviceControlsProps = {
   cameraEnabled: boolean;
   onToggleMic: () => void;
   onToggleCamera: () => void;
-  onOpenSettings: () => void;
+  showPermissionWarning?: boolean;
 };
 
 export function DeviceControls({
@@ -17,18 +17,20 @@ export function DeviceControls({
   cameraEnabled,
   onToggleMic,
   onToggleCamera,
-  onOpenSettings,
+  showPermissionWarning = false,
 }: DeviceControlsProps) {
   return (
-    <div className="absolute bottom-5 left-1/2 z-10 flex -translate-x-1/2 items-center gap-3 rounded-full border border-white/10 bg-black/[0.42] p-2 shadow-2xl backdrop-blur">
+    <div className="absolute bottom-5 left-1/2 z-10 flex -translate-x-1/2 items-center gap-5">
       <button
         type="button"
         aria-label={micEnabled ? "Mute microphone" : "Unmute microphone"}
         aria-pressed={!micEnabled}
         onClick={onToggleMic}
         className={cn(
-          "grid size-12 place-items-center rounded-full border border-white/10 text-white transition-colors hover:bg-white/[0.14] focus:outline-none focus:ring-2 focus:ring-white/70",
-          micEnabled ? "bg-white/10" : "bg-red-500 text-white hover:bg-red-500/92",
+          "relative grid size-14 place-items-center rounded-full shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-white/70",
+          micEnabled
+            ? "bg-primary text-primary-foreground hover:bg-primary/92"
+            : "bg-red-500 text-white hover:bg-red-500/92",
         )}
       >
         {micEnabled ? (
@@ -36,6 +38,7 @@ export function DeviceControls({
         ) : (
           <MicOff className="size-5" aria-hidden="true" />
         )}
+        {showPermissionWarning ? <WarningDot /> : null}
       </button>
 
       <button
@@ -44,9 +47,9 @@ export function DeviceControls({
         aria-pressed={!cameraEnabled}
         onClick={onToggleCamera}
         className={cn(
-          "grid size-12 place-items-center rounded-full border border-white/10 text-white transition-colors hover:bg-white/[0.14] focus:outline-none focus:ring-2 focus:ring-white/70",
+          "relative grid size-14 place-items-center rounded-full shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-white/70",
           cameraEnabled
-            ? "bg-white/10"
+            ? "bg-primary text-primary-foreground hover:bg-primary/92"
             : "bg-red-500 text-white hover:bg-red-500/92",
         )}
       >
@@ -55,16 +58,16 @@ export function DeviceControls({
         ) : (
           <VideoOff className="size-5" aria-hidden="true" />
         )}
-      </button>
-
-      <button
-        type="button"
-        aria-label="Open device settings"
-        onClick={onOpenSettings}
-        className="grid size-12 place-items-center rounded-full border border-white/10 bg-white/10 text-white transition-colors hover:bg-white/[0.14] focus:outline-none focus:ring-2 focus:ring-white/70"
-      >
-        <Settings className="size-5" aria-hidden="true" />
+        {showPermissionWarning ? <WarningDot /> : null}
       </button>
     </div>
+  );
+}
+
+function WarningDot() {
+  return (
+    <span className="absolute -right-0.5 -top-0.5 grid size-4 place-items-center rounded-full bg-amber-400 text-[10px] font-bold leading-none text-neutral-950">
+      !
+    </span>
   );
 }

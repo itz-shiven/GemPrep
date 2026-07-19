@@ -6,7 +6,6 @@ import dynamic from "next/dynamic";
 import type { EditorProps, OnMount } from "@monaco-editor/react";
 import type { Monaco } from "@monaco-editor/react";
 
-import { ExecutionResultPanel } from "@/features/code-execution/components/ExecutionResultPanel";
 import { TestCasePanel } from "@/features/code-execution/components/TestCasePanel";
 import { useCollaborativeEditor } from "@/features/collaborative-editor/hooks/useCollaborativeEditor";
 import type {
@@ -36,6 +35,8 @@ export function CollaborativeEditor({
   executionError,
   executionResults,
   isRunningCode,
+  canModifyTestCases,
+  theme,
   onLanguageChange,
   onAddTestCase,
   onRunCode,
@@ -47,6 +48,7 @@ export function CollaborativeEditor({
   const lastSharedLanguageRef = useRef<LanguageId>(language.id);
   const [testPaneHeight, setTestPaneHeight] = useState(30);
   const canEdit = user.role === "CANDIDATE";
+  const isDark = theme === "dark";
   const editorOptions: EditorProps["options"] = {
     automaticLayout: true,
     minimap: { enabled: false },
@@ -68,7 +70,6 @@ export function CollaborativeEditor({
     setSharedLanguage,
   } = useCollaborativeEditor({
     roomId,
-    user,
     language,
     canEdit,
     onRemoteLanguageChange: onLanguageChange,
@@ -93,8 +94,8 @@ export function CollaborativeEditor({
     }
 
     lastSharedLanguageRef.current = language.id;
-    setSharedLanguage(language.id, language.initialCode);
-  }, [canEdit, language.id, language.initialCode, setSharedLanguage]);
+    setSharedLanguage(language.id);
+  }, [canEdit, language.id, setSharedLanguage]);
 
   useEffect(() => {
     const editorModel = editorRef.current?.getModel();
@@ -140,30 +141,37 @@ export function CollaborativeEditor({
   return (
     <section
       className={cn(
-        "flex h-full min-h-0 flex-col overflow-hidden rounded-lg border border-white/10 bg-black text-white shadow-2xl",
+        "flex h-full min-h-0 flex-col overflow-hidden rounded-lg border shadow-2xl",
+        isDark
+          ? "border-white/10 bg-black text-white"
+          : "border-neutral-300 bg-background text-foreground",
         className,
       )}
     >
       <button
         type="button"
         data-run-code-trigger
-        className="sr-only"
+        className="pointer-events-none fixed -left-[9999px] -top-[9999px] size-px opacity-0"
         onClick={handleRunCode}
         disabled={isRunningCode}
+        tabIndex={-1}
       >
         Run Code
       </button>
 
       <div ref={editorBodyRef} className="flex min-h-0 flex-1 flex-col">
         <div
-          className="min-h-0 overflow-hidden bg-black"
+          className={cn(
+            "min-h-0 overflow-hidden",
+            isDark ? "bg-[#1f1f1f]" : "bg-white",
+          )}
           style={{ flex: `1 1 ${100 - testPaneHeight}%` }}
         >
           <MonacoEditor
             height="100%"
             language={language.monacoLanguage}
-            path={`gemprep-${roomId}-${language.fileName}`}
-            theme="vs-dark"
+            path={`gemprep-${roomId}-shared-code`}
+            theme={isDark ? "vs-dark" : "vs"}
             options={editorOptions}
             onMount={handleMount}
           />
@@ -172,29 +180,42 @@ export function CollaborativeEditor({
         <div
           aria-label="Resize editor and test case panes"
           aria-orientation="horizontal"
-          className="group grid h-2 shrink-0 cursor-row-resize touch-none place-items-center border-y border-white/10 bg-neutral-900 transition-colors hover:bg-primary/15"
+          className={cn(
+            "group grid h-2 shrink-0 cursor-row-resize touch-none place-items-center border-y transition-colors",
+            isDark
+              ? "border-white/10 bg-neutral-900 hover:bg-primary/15"
+              : "border-neutral-300 bg-neutral-100 hover:bg-primary/10",
+          )}
           onPointerDown={startVerticalResize}
           role="separator"
           tabIndex={0}
         >
-          <span className="h-0.5 w-12 rounded-full bg-white/15 transition-colors group-hover:bg-primary" />
+          <span
+            className={cn(
+              "h-0.5 w-12 rounded-full transition-colors group-hover:bg-primary",
+              isDark ? "bg-white/15" : "bg-neutral-400",
+            )}
+          />
         </div>
 
         <div
-          className="min-h-0 shrink-0 overflow-hidden bg-black"
+          className={cn(
+            "min-h-0 shrink-0 overflow-hidden",
+            isDark ? "bg-[#1f1f1f]" : "bg-white",
+          )}
           style={{ flexBasis: `${testPaneHeight}%` }}
         >
-          <div className="grid h-full min-h-0 grid-cols-1 gap-2 p-2.5 xl:grid-cols-[minmax(0,1.05fr)_minmax(280px,0.95fr)]">
+          <div className="h-full min-h-0 p-2.5">
             <TestCasePanel
               testCases={testCases}
+              executionError={executionError}
+              executionResults={executionResults}
+              isRunning={isRunningCode}
+              canModifyTestCases={canModifyTestCases}
+              theme={theme}
               onAddTestCase={(testCase) => {
                 onAddTestCase(testCase);
               }}
-            />
-            <ExecutionResultPanel
-              error={executionError}
-              isRunning={isRunningCode}
-              results={executionResults}
             />
           </div>
         </div>

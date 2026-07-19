@@ -17,20 +17,12 @@ export function createEditorYDoc(): EditorYDoc {
 }
 
 export function seedEditorDocument({
-  codeText,
   metadata,
-  initialCode,
   languageId,
 }: {
-  codeText: Y.Text;
   metadata: Y.Map<string>;
-  initialCode: string;
   languageId: string;
 }) {
-  if (codeText.length === 0 && initialCode) {
-    codeText.insert(0, initialCode);
-  }
-
   if (!metadata.get("languageId")) {
     metadata.set("languageId", languageId);
   }

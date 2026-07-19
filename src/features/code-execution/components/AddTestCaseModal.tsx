@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import type { ReactNode } from "react";
 import { Plus } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -18,9 +19,13 @@ import type { NewCodeExecutionTestCase } from "@/features/code-execution/types/e
 
 type AddTestCaseModalProps = {
   onAddTestCase: (testCase: NewCodeExecutionTestCase) => void;
+  trigger?: ReactNode;
 };
 
-export function AddTestCaseModal({ onAddTestCase }: AddTestCaseModalProps) {
+export function AddTestCaseModal({
+  onAddTestCase,
+  trigger,
+}: AddTestCaseModalProps) {
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState("");
   const [expectedOutput, setExpectedOutput] = useState("");
@@ -40,15 +45,17 @@ export function AddTestCaseModal({ onAddTestCase }: AddTestCaseModalProps) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          className="border-white/10 bg-white/[0.06] text-white hover:bg-white/[0.12]"
-        >
-          <Plus className="size-4" aria-hidden="true" />
-          Add Test Case
-        </Button>
+        {trigger ?? (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="border-white/10 bg-white/[0.06] text-white hover:bg-white/[0.12]"
+          >
+            <Plus className="size-4" aria-hidden="true" />
+            Add Test Case
+          </Button>
+        )}
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>

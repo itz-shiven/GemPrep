@@ -6,6 +6,7 @@ import type {
   NewCodeExecutionTestCase,
 } from "@/features/code-execution/types/execution";
 import type {
+  InterviewRoomTheme,
   LanguageId,
   LanguageOption,
   RoomRole,
@@ -23,15 +24,6 @@ export type CollaborationStatus =
   | "disconnected"
   | "reconnecting";
 
-export type EditorPresenceUser = {
-  clientId: number;
-  id: string;
-  name: string;
-  role: RoomRole;
-  color: string;
-  status: "editing" | "viewing";
-};
-
 export type CollaborativeEditorProps = {
   roomId: string;
   user: CollaborativeEditorUser;
@@ -40,6 +32,8 @@ export type CollaborativeEditorProps = {
   executionError: string | null;
   executionResults: CodeExecutionResult[];
   isRunningCode: boolean;
+  canModifyTestCases: boolean;
+  theme: InterviewRoomTheme;
   onLanguageChange: (languageId: LanguageId) => void;
   onAddTestCase: (testCase: NewCodeExecutionTestCase) => void;
   onRunCode: (sourceCode: string) => void;

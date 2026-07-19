@@ -11,7 +11,7 @@ export const PISTON_LANGUAGE_RUNTIMES: Record<
   PistonLanguageRuntime
 > = {
   cpp: {
-    language: "cpp",
+    language: "c++",
     version: "*",
     fileName: "main.cpp",
   },

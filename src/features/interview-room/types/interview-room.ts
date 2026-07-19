@@ -4,6 +4,8 @@ export type RoomRole = InterviewRole;
 
 export type RoomStatus = "LIVE" | "PAUSED";
 
+export type InterviewRoomTheme = "dark" | "light";
+
 export type Difficulty = "Easy" | "Medium" | "Hard";
 
 export type LanguageId = "cpp" | "java" | "python" | "javascript";
@@ -13,7 +15,6 @@ export type LanguageOption = {
   label: string;
   monacoLanguage: string;
   fileName: string;
-  initialCode: string;
 };
 
 export type ProblemExample = {

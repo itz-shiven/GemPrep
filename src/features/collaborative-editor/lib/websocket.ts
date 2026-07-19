@@ -2,7 +2,6 @@ export const COLLABORATION_MESSAGE_TYPES = {
   update: 0,
   syncRequest: 1,
   syncResponse: 2,
-  awareness: 3,
 } as const;
 
 export type CollaborationMessageType =

@@ -17,12 +17,17 @@ import {
   MOCK_INTERVIEW_ROOM,
   getLanguageOption,
 } from "@/features/interview-room/data/mockInterviewRoom";
-import type { LanguageId, TestCase } from "@/features/interview-room/types/interview-room";
+import type {
+  InterviewRoomTheme,
+  LanguageId,
+  TestCase,
+} from "@/features/interview-room/types/interview-room";
 import { LiveKitProvider } from "@/features/livekit/components/LiveKitProvider";
 import { VideoGrid } from "@/features/livekit/components/VideoGrid";
 import { getMockInterviewByRoomId } from "@/features/interview-workspace/data/mockInterviews";
 import { useStoredInterviewRole } from "@/features/interview-workspace/hooks/use-stored-interview-role";
 import type { InterviewRole } from "@/features/interview-workspace/types/interview";
+import { cn } from "@/lib/utils";
 
 type InterviewRoomProps = {
   roomId: string;
@@ -44,12 +49,14 @@ export function InterviewRoom({ roomId, currentUser }: InterviewRoomProps) {
 
   const [problemPaneWidth, setProblemPaneWidth] = useState(42);
   const [languageId, setLanguageId] = useState<LanguageId>("cpp");
+  const [theme, setTheme] = useState<InterviewRoomTheme>("dark");
   const selectedLanguage = getLanguageOption(languageId);
   const [testCases, setTestCases] = useState<TestCase[]>(() =>
     MOCK_INTERVIEW_ROOM.testCases.map((testCase) => ({ ...testCase })),
   );
   const { error, isRunning, resetResults, results, runCode } =
     useCodeExecution();
+  const isDark = theme === "dark";
 
   function handleLanguageChange(nextLanguageId: LanguageId) {
     setLanguageId(nextLanguageId);
@@ -68,6 +75,10 @@ export function InterviewRoom({ roomId, currentUser }: InterviewRoomProps) {
   }
 
   function handleAddTestCase(testCase: NewCodeExecutionTestCase) {
+    if (role !== "INTERVIEWER") {
+      return;
+    }
+
     resetResults();
     setTestCases((currentTestCases) => [
       ...currentTestCases,
@@ -107,15 +118,28 @@ export function InterviewRoom({ roomId, currentUser }: InterviewRoomProps) {
   }
 
   return (
-    <main className="flex h-dvh flex-col overflow-hidden bg-neutral-900 text-white">
+    <main
+      className={cn(
+        "flex h-dvh flex-col overflow-hidden",
+        isDark ? "bg-neutral-800 text-white" : "bg-neutral-200 text-foreground",
+      )}
+    >
       <LiveKitProvider roomId={roomId} role={role}>
         <RoomHeader
+          role={role}
+          theme={theme}
+          onToggleTheme={() =>
+            setTheme((currentTheme) =>
+              currentTheme === "dark" ? "light" : "dark",
+            )
+          }
           interviewerVideo={
             <VideoGrid compact remoteOnly maxTiles={1} />
           }
           runCodeAction={
             <RunCodeButton
               isRunning={isRunning}
+              theme={theme}
               onRun={() => {
                 const trigger = document.querySelector<HTMLButtonElement>(
                   "[data-run-code-trigger]",
@@ -126,13 +150,23 @@ export function InterviewRoom({ roomId, currentUser }: InterviewRoomProps) {
           }
         />
 
-        <div className="relative min-h-0 flex-1 overflow-hidden p-3">
+        <div
+          className={cn(
+            "relative min-h-0 flex-1 overflow-hidden p-3",
+            isDark ? "bg-neutral-800" : "bg-neutral-200",
+          )}
+        >
           <motion.div
             ref={workspaceRef}
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-            className="flex h-full min-h-0 overflow-hidden rounded-lg border border-black/35 bg-neutral-900"
+            className={cn(
+              "flex h-full min-h-0 overflow-hidden rounded-lg border",
+              isDark
+                ? "border-neutral-700 bg-neutral-800"
+                : "border-neutral-300 bg-neutral-200",
+            )}
           >
             <div
               className="min-w-0"
@@ -147,22 +181,37 @@ export function InterviewRoom({ roomId, currentUser }: InterviewRoomProps) {
                     value={selectedLanguage.id}
                     languages={MOCK_INTERVIEW_ROOM.languages}
                     disabled={role !== "CANDIDATE"}
+                    theme={theme}
                     onChange={handleLanguageChange}
                   />
                 }
-                className="rounded-none border-0 border-r border-white/10 shadow-none"
+                theme={theme}
+                className={cn(
+                  "rounded-none border-0 border-r shadow-none",
+                  isDark ? "border-white/10" : "border-neutral-300",
+                )}
               />
             </div>
 
             <div
               aria-label="Resize problem and compiler panes"
               aria-orientation="vertical"
-              className="group grid w-2 shrink-0 cursor-col-resize touch-none place-items-center bg-neutral-900 transition-colors hover:bg-primary/15"
+              className={cn(
+                "group grid w-2 shrink-0 cursor-col-resize touch-none place-items-center transition-colors",
+                isDark
+                  ? "bg-neutral-800 hover:bg-primary/15"
+                  : "bg-neutral-200 hover:bg-primary/10",
+              )}
               onPointerDown={startHorizontalResize}
               role="separator"
               tabIndex={0}
             >
-              <span className="h-12 w-0.5 rounded-full bg-white/15 transition-colors group-hover:bg-primary" />
+              <span
+                className={cn(
+                  "h-12 w-0.5 rounded-full transition-colors group-hover:bg-primary",
+                  isDark ? "bg-white/15" : "bg-neutral-400",
+                )}
+              />
             </div>
 
             <div className="min-w-0 flex-1">
@@ -174,6 +223,8 @@ export function InterviewRoom({ roomId, currentUser }: InterviewRoomProps) {
                 executionError={error}
                 executionResults={results}
                 isRunningCode={isRunning}
+                canModifyTestCases={role === "INTERVIEWER"}
+                theme={theme}
                 onLanguageChange={handleLanguageChange}
                 onAddTestCase={handleAddTestCase}
                 onRunCode={handleRunCode}
