@@ -6,6 +6,14 @@ export type RoomStatus = "LIVE" | "PAUSED";
 
 export type InterviewRoomTheme = "dark" | "light";
 
+export type InterviewTimerStatus = "idle" | "running" | "paused";
+
+export type InterviewTimerSnapshot = {
+  status: InterviewTimerStatus;
+  elapsedSeconds: number;
+  updatedAt: number;
+};
+
 export type Difficulty = "Easy" | "Medium" | "Hard";
 
 export type LanguageId = "cpp" | "java" | "python" | "javascript";

@@ -18,14 +18,7 @@ export async function requireSyncedUser() {
 }
 
 export function isProfileComplete(user: UserModel) {
-  return Boolean(
-    user.fullName &&
-      user.college &&
-      user.graduationYear &&
-      user.preferredLanguage &&
-      user.experienceLevel &&
-      user.bio,
-  );
+  return Boolean(user.fullName && user.preferredLanguage);
 }
 
 async function syncClerkUser(clerkUser: ClerkUser) {

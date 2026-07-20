@@ -57,6 +57,7 @@ export function OnboardingForm({ defaults }: OnboardingFormProps) {
             <Field
               id="fullName"
               label="Full name"
+              required
               error={state.errors?.fullName?.[0]}
             >
               <Input
@@ -80,7 +81,6 @@ export function OnboardingForm({ defaults }: OnboardingFormProps) {
                 autoComplete="organization"
                 defaultValue={defaults.college}
                 placeholder="University name"
-                required
               />
             </Field>
 
@@ -98,13 +98,13 @@ export function OnboardingForm({ defaults }: OnboardingFormProps) {
                 max={2040}
                 defaultValue={defaults.graduationYear}
                 placeholder="2027"
-                required
               />
             </Field>
 
             <Field
               id="preferredLanguage"
               label="Preferred language"
+              required
               error={state.errors?.preferredLanguage?.[0]}
             >
               <Select
@@ -133,7 +133,6 @@ export function OnboardingForm({ defaults }: OnboardingFormProps) {
                 id="experienceLevel"
                 name="experienceLevel"
                 defaultValue={defaults.experienceLevel}
-                required
               >
                 <option value="" disabled>
                   Select level
@@ -167,7 +166,6 @@ export function OnboardingForm({ defaults }: OnboardingFormProps) {
               defaultValue={defaults.bio}
               maxLength={BIO_MAX_LENGTH}
               placeholder="Tell peers what you are preparing for and where you want feedback."
-              required
             />
           </Field>
 
@@ -192,17 +190,32 @@ export function OnboardingForm({ defaults }: OnboardingFormProps) {
 function Field({
   id,
   label,
+  required = false,
   error,
   children,
 }: {
   id: string;
   label: string;
+  required?: boolean;
   error?: string;
   children: ReactNode;
 }) {
   return (
     <div className="space-y-2">
-      <Label htmlFor={id}>{label}</Label>
+      <Label htmlFor={id}>
+        {label}
+        {required ? (
+          <>
+            <span
+              aria-hidden="true"
+              className="ml-1 align-super text-xs font-semibold text-destructive"
+            >
+              *
+            </span>
+            <span className="sr-only"> required</span>
+          </>
+        ) : null}
+      </Label>
       {children}
       {error ? <p className="text-xs text-destructive">{error}</p> : null}
     </div>

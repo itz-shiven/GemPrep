@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { Clock3 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { useSyncedInterviewTimer } from "@/features/interview-room/hooks/useSyncedInterviewTimer";
 import type {
   InterviewRoomTheme,
   RoomRole,
@@ -13,32 +13,30 @@ import { cn } from "@/lib/utils";
 type InterviewTimerProps = {
   initialSeconds?: number;
   role: RoomRole;
+  roomId: string;
   theme?: InterviewRoomTheme;
 };
 
 export function InterviewTimer({
   initialSeconds = 0,
   role,
+  roomId,
   theme = "dark",
 }: InterviewTimerProps) {
-  const [secondsElapsed, setSecondsElapsed] = useState(initialSeconds);
-  const [state, setState] = useState<"idle" | "running" | "paused">("idle");
-  const canControlTimer = role === "INTERVIEWER";
+  const {
+    canControlTimer,
+    displaySeconds,
+    startTimer,
+    status,
+    toggleTimer,
+  } = useSyncedInterviewTimer({
+    initialSeconds,
+    role,
+    roomId,
+  });
   const isDark = theme === "dark";
 
-  useEffect(() => {
-    if (state !== "running") {
-      return;
-    }
-
-    const timerId = window.setInterval(() => {
-      setSecondsElapsed((seconds) => seconds + 1);
-    }, 1000);
-
-    return () => window.clearInterval(timerId);
-  }, [state]);
-
-  if (canControlTimer && state === "idle") {
+  if (canControlTimer && status === "idle") {
     return (
       <Button
         type="button"
@@ -49,7 +47,7 @@ export function InterviewTimer({
             ? "border-white/10 bg-white/[0.08] text-white hover:bg-white/[0.14]"
             : "border-border bg-background text-foreground hover:bg-secondary",
         )}
-        onClick={() => setState("running")}
+        onClick={startTimer}
       >
         <Clock3 className="size-4 text-primary" aria-hidden="true" />
         Start Interview
@@ -57,10 +55,10 @@ export function InterviewTimer({
     );
   }
 
-  const timerLabel = formatDuration(secondsElapsed);
+  const timerLabel = formatDuration(displaySeconds);
 
   if (canControlTimer) {
-    const isPaused = state === "paused";
+    const isPaused = status === "paused";
 
     return (
       <button
@@ -76,13 +74,9 @@ export function InterviewTimer({
               : "border-border bg-background text-foreground hover:bg-secondary",
         )}
         aria-label={
-          state === "running" ? "Pause interview timer" : "Resume interview timer"
+          status === "running" ? "Pause interview timer" : "Resume interview timer"
         }
-        onClick={() =>
-          setState((currentState) =>
-            currentState === "running" ? "paused" : "running",
-          )
-        }
+        onClick={toggleTimer}
       >
         <Clock3
           className={cn(

@@ -154,7 +154,7 @@ export function TestCasePanel({
           ) : null}
         </div>
 
-        <div className="mt-5 min-h-0 flex-1 overflow-y-auto">
+        <div className="mt-5 min-h-0 flex-1 overflow-y-scroll pr-2 [scrollbar-gutter:stable]">
           {activeTab === "testcase" ? (
             activeTestCase ? (
               <TestCaseView testCase={activeTestCase} theme={theme} />

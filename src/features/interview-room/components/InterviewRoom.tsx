@@ -127,6 +127,7 @@ export function InterviewRoom({ roomId, currentUser }: InterviewRoomProps) {
       <LiveKitProvider roomId={roomId} role={role}>
         <RoomHeader
           role={role}
+          roomId={roomId}
           theme={theme}
           onToggleTheme={() =>
             setTheme((currentTheme) =>

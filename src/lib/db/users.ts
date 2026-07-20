@@ -13,11 +13,11 @@ export type ClerkProfileInput = {
 
 export type OnboardingProfileInput = {
   fullName: string;
-  college: string;
-  graduationYear: number;
+  college: string | null;
+  graduationYear: number | null;
   preferredLanguage: string;
   experienceLevel: UserModel["experienceLevel"];
-  bio: string;
+  bio: string | null;
   avatar?: string | null;
 };
 

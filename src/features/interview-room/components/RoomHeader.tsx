@@ -1,8 +1,10 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Moon, PhoneOff, Sun } from "lucide-react";
+import { Loader2, Moon, PhoneOff, Sun } from "lucide-react";
+import { motion } from "framer-motion";
 
 import { Button } from "@/components/ui/button";
 import { InterviewTimer } from "@/features/interview-room/components/InterviewTimer";
@@ -17,6 +19,7 @@ type RoomHeaderProps = {
   interviewerVideo?: ReactNode;
   runCodeAction?: ReactNode;
   role: RoomRole;
+  roomId: string;
   theme: InterviewRoomTheme;
   onToggleTheme: () => void;
 };
@@ -25,14 +28,33 @@ export function RoomHeader({
   interviewerVideo,
   runCodeAction,
   role,
+  roomId,
   theme,
   onToggleTheme,
 }: RoomHeaderProps) {
   const router = useRouter();
   const isDark = theme === "dark";
+  const leaveTimeoutRef = useRef<number | null>(null);
+  const [isLeaving, setIsLeaving] = useState(false);
+
+  useEffect(
+    () => () => {
+      if (leaveTimeoutRef.current) {
+        window.clearTimeout(leaveTimeoutRef.current);
+      }
+    },
+    [],
+  );
 
   function leaveRoom() {
-    router.push(ROUTES.interviewWorkspace);
+    if (isLeaving) {
+      return;
+    }
+
+    setIsLeaving(true);
+    leaveTimeoutRef.current = window.setTimeout(() => {
+      router.push(ROUTES.interviewWorkspace);
+    }, 320);
   }
 
   return (
@@ -91,17 +113,39 @@ export function RoomHeader({
               <Moon className="size-4" aria-hidden="true" />
             )}
           </Button>
-          <InterviewTimer role={role} theme={theme} />
-          <Button
-            type="button"
-            variant="destructive"
-            size="sm"
-            className="bg-red-600 text-white hover:bg-red-600/92"
-            onClick={leaveRoom}
+          <InterviewTimer role={role} roomId={roomId} theme={theme} />
+          <motion.div
+            animate={
+              isLeaving
+                ? {
+                    scale: [1, 0.96, 1],
+                  }
+                : {
+                    scale: 1,
+                  }
+            }
+            transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+            whileTap={{ scale: 0.94 }}
           >
-            <PhoneOff className="size-4" />
-            Leave
-          </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              size="sm"
+              className={cn(
+                "min-w-24 bg-red-600 text-white transition-all hover:bg-red-600/92",
+                isLeaving && "ring-2 ring-red-300/60 ring-offset-2 ring-offset-transparent",
+              )}
+              disabled={isLeaving}
+              onClick={leaveRoom}
+            >
+              {isLeaving ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <PhoneOff className="size-4" />
+              )}
+              {isLeaving ? "Leaving" : "Leave"}
+            </Button>
+          </motion.div>
         </div>
       </div>
     </header>
