@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -8,9 +8,13 @@ import { CameraPreview } from "@/features/interview-workspace/components/CameraP
 import { DeviceControls } from "@/features/interview-workspace/components/DeviceControls";
 import { InterviewInfoCard } from "@/features/interview-workspace/components/InterviewInfoCard";
 import { getMockInterviewByRoomId } from "@/features/interview-workspace/data/mockInterviews";
-import { useStoredInterviewRole } from "@/features/interview-workspace/hooks/use-stored-interview-role";
+import {
+  setStoredInterviewRole,
+  useStoredInterviewRole,
+} from "@/features/interview-workspace/hooks/use-stored-interview-role";
 import { DeviceSelector } from "@/features/livekit/components/DeviceSelector";
 import {
+  INTERVIEW_INVITE_ROLE_PARAM,
   type InterviewRole,
   type MockInterviewRoom,
 } from "@/features/interview-workspace/types/interview";
@@ -27,8 +31,10 @@ type WaitingRoomProps = {
 
 export function WaitingRoom({ roomId, user }: WaitingRoomProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const inviteRole = parseInviteRole(searchParams.get(INTERVIEW_INVITE_ROLE_PARAM));
   const baseRoom = useMemo(() => getMockInterviewByRoomId(roomId), [roomId]);
-  const fallbackRole = baseRoom?.role ?? "CANDIDATE";
+  const fallbackRole = inviteRole ?? baseRoom?.role ?? "CANDIDATE";
   const role = useStoredInterviewRole(roomId, fallbackRole);
   const room = useMemo(
     () => baseRoom ?? createFallbackRoom(roomId, role),
@@ -48,6 +54,12 @@ export function WaitingRoom({ roomId, user }: WaitingRoomProps) {
   const userName = user.fullName || "GEMPREP user";
   const videoDevices = devices.filter((device) => device.kind === "videoinput");
   const audioDevices = devices.filter((device) => device.kind === "audioinput");
+
+  useEffect(() => {
+    if (inviteRole) {
+      setStoredInterviewRole(roomId, inviteRole);
+    }
+  }, [inviteRole, roomId]);
 
   useEffect(() => {
     let active = true;
@@ -227,6 +239,16 @@ export function WaitingRoom({ roomId, user }: WaitingRoomProps) {
       </div>
     </main>
   );
+}
+
+function parseInviteRole(role: string | null): InterviewRole | null {
+  const normalizedRole = role?.toUpperCase();
+
+  if (normalizedRole === "INTERVIEWER" || normalizedRole === "CANDIDATE") {
+    return normalizedRole;
+  }
+
+  return null;
 }
 
 function useAudioLevel(mediaStream: MediaStream | null, micEnabled: boolean) {

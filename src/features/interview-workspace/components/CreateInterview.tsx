@@ -17,6 +17,10 @@ import {
 import { LinkGenerator } from "@/features/interview-workspace/components/LinkGenerator";
 import { RoleSelector } from "@/features/interview-workspace/components/RoleSelector";
 import {
+  createInterviewInviteLink,
+  getCounterpartRole,
+} from "@/features/interview-workspace/data/mockInterviews";
+import {
   type GeneratedInterview,
   type InterviewRole,
 } from "@/features/interview-workspace/types/interview";
@@ -31,10 +35,12 @@ export function CreateInterview() {
 
   function generateInterview(selectedRole: InterviewRole) {
     const roomId = createRoomId();
+    const inviteRole = getCounterpartRole(selectedRole);
     const nextInterview: GeneratedInterview = {
       roomId,
       role: selectedRole,
-      link: `https://gemprep.com/room/${roomId}`,
+      inviteRole,
+      link: createInterviewInviteLink(roomId, inviteRole, getAppOrigin()),
       status: "WAITING",
     };
 
@@ -96,4 +102,10 @@ export function CreateInterview() {
 
 function createRoomId() {
   return Math.random().toString(36).slice(2, 8);
+}
+
+function getAppOrigin() {
+  return typeof window === "undefined"
+    ? "https://gemprep.com"
+    : window.location.origin;
 }

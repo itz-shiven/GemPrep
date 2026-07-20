@@ -43,12 +43,21 @@ export function LinkGenerator({ interview, onContinue }: LinkGeneratorProps) {
     <div className="space-y-4 rounded-lg border bg-secondary/35 p-4">
       <div className="flex flex-wrap items-center gap-2">
         <Badge variant="success">Link generated</Badge>
-        <Badge variant="outline">{INTERVIEW_ROLE_LABELS[interview.role]}</Badge>
+        <Badge variant="outline">
+          You: {INTERVIEW_ROLE_LABELS[interview.role]}
+        </Badge>
+        <Badge variant="muted">
+          Invite: {INTERVIEW_ROLE_LABELS[interview.inviteRole]}
+        </Badge>
         <Badge variant="muted">Status: {interview.status}</Badge>
       </div>
 
       <div className="space-y-2">
         <p className="text-sm font-medium">Generated room link</p>
+        <p className="text-xs text-muted-foreground">
+          Anyone using this link joins as{" "}
+          {INTERVIEW_ROLE_LABELS[interview.inviteRole]} for this room.
+        </p>
         <div className="flex gap-2">
           <Input value={interview.link} readOnly aria-label="Generated room link" />
           <Button type="button" variant="outline" size="icon" onClick={copyLink}>

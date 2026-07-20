@@ -1,4 +1,8 @@
-import type { MockInterviewRoom } from "@/features/interview-workspace/types/interview";
+import {
+  INTERVIEW_INVITE_ROLE_PARAM,
+  type InterviewRole,
+  type MockInterviewRoom,
+} from "@/features/interview-workspace/types/interview";
 
 export const MOCK_INTERVIEW_ROOMS: MockInterviewRoom[] = [
   {
@@ -38,10 +42,24 @@ export function getMockInterviewByLink(link: string) {
     return null;
   }
 
-  return getMockInterviewByRoomId(roomId) ?? {
+  const inviteRole = parseInviteRoleFromLink(link);
+  const mockRoom = getMockInterviewByRoomId(roomId);
+
+  if (mockRoom) {
+    return inviteRole
+      ? {
+          ...mockRoom,
+          role: inviteRole,
+          inviteRole,
+        }
+      : mockRoom;
+  }
+
+  return {
     roomId,
-    link: `https://gemprep.com/room/${roomId}`,
-    role: "CANDIDATE" as const,
+    link: createInterviewInviteLink(roomId, inviteRole ?? "CANDIDATE"),
+    role: inviteRole ?? "CANDIDATE",
+    inviteRole: inviteRole ?? "CANDIDATE",
     status: "WAITING" as const,
     type: "Data structures mock" as const,
     duration: "45 minutes",
@@ -66,4 +84,37 @@ export function parseRoomIdFromLink(link: string) {
   }
 
   return null;
+}
+
+export function createInterviewInviteLink(
+  roomId: string,
+  inviteRole: InterviewRole,
+  baseUrl = "https://gemprep.com",
+) {
+  const url = new URL(`/room/${roomId}/waiting`, baseUrl);
+  url.searchParams.set(INTERVIEW_INVITE_ROLE_PARAM, inviteRole);
+
+  return url.toString();
+}
+
+export function parseInviteRoleFromLink(link: string): InterviewRole | null {
+  const trimmed = link.trim();
+
+  if (!trimmed) {
+    return null;
+  }
+
+  const queryMatch = trimmed.match(/[?&]joinRole=(INTERVIEWER|CANDIDATE)\b/i);
+  const hashMatch = trimmed.match(/[#&]joinRole=(INTERVIEWER|CANDIDATE)\b/i);
+  const role = queryMatch?.[1] ?? hashMatch?.[1];
+
+  if (!role) {
+    return null;
+  }
+
+  return role.toUpperCase() as InterviewRole;
+}
+
+export function getCounterpartRole(role: InterviewRole): InterviewRole {
+  return role === "CANDIDATE" ? "INTERVIEWER" : "CANDIDATE";
 }
