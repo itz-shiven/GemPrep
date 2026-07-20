@@ -47,7 +47,7 @@ export function TestCasePanel({
   return (
     <section
       className={cn(
-        "flex min-h-0 flex-col overflow-hidden rounded-lg border shadow-2xl",
+        "flex h-full min-h-0 flex-col overflow-hidden rounded-lg border shadow-2xl",
         isDark
           ? "border-white/10 bg-[#262626]"
           : "border-neutral-300 bg-background",
@@ -154,7 +154,7 @@ export function TestCasePanel({
           ) : null}
         </div>
 
-        <div className="mt-5 min-h-0 flex-1 overflow-y-scroll pr-2 [scrollbar-gutter:stable]">
+        <div className="interview-scrollbar mt-5 min-h-0 flex-1 basis-0 overflow-y-scroll overflow-x-hidden pr-2 [scrollbar-gutter:stable]">
           {activeTab === "testcase" ? (
             activeTestCase ? (
               <TestCaseView testCase={activeTestCase} theme={theme} />
@@ -186,7 +186,7 @@ function TestCaseView({
   const isDark = theme === "dark";
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5 pb-5">
       <div>
         <p
           className={cn(

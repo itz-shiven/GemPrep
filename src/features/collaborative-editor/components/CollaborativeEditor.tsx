@@ -61,6 +61,7 @@ export function CollaborativeEditor({
     tabSize: 2,
     padding: { top: 16, bottom: 16 },
     readOnly: !canEdit,
+    fixedOverflowWidgets: true,
     renderLineHighlight: "all",
     overviewRulerBorder: false,
   };
